@@ -1,0 +1,7 @@
+Debug/*
+Release/*
+wolf_online/*
+wolf_online*
+*.db
+*.swp
+*.out
