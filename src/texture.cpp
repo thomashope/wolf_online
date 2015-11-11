@@ -51,6 +51,11 @@ Texture::~Texture()
 	}
 }
 
+void Texture::RenderRect(SDL_Rect* sample, SDL_Rect* dest)
+{
+	SDL_RenderCopy(renderTarget_, texture_, sample, dest);
+}
+
 void Texture::RenderStrip(int destX, int startY, int endY, float texCoordX)
 {
 	// convert the texCoord from [0,1] to [0,width_]

@@ -28,20 +28,20 @@
 
 #include "SDLsetup.h"
 #include "InstantCG.h"
-#include "texture.h"
-#include "vec2.h"
+#include "sprite.h"
+//#include "vec2.h"
 using namespace InstantCG;
+
+// function prototypes
+void print(float num);
+bool processEvents();
+std::string getProjectPath(const std::string &subDir = "");
+//SDL_Texture* loadImage(std::string path, bool transparent = false);
 
 #define MAP_WIDTH 24
 #define MAP_HEGIHT 24
 bool fullscreen = false;
 std::string projectPath = getProjectPath();
-
-// replacements for quickcg functionality
-// function prototypes
-void print(float num);
-bool processEvents();
-SDL_Texture* loadImage(std::string path, bool transparent = false);
 
 // globals
 int mouseXDist; // horizontal distance traveled by the mouse
@@ -74,25 +74,6 @@ char worldMap[MAP_WIDTH][MAP_HEGIHT] =
   {4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4}
 };
 
-struct WallDepthInfo {
-	int top, bottom;
-	double perpDist;
-	double depth;
-};
-
-struct Sprite {
-	Sprite(float x_, float y_) :x(x_), y(y_){}
-	float x, y;
-	SDL_Texture* texture;
-	float dist(float x, float y) {
-		float dx = abs(x - this->x);
-		float dy = abs(y - this->y);
-		return sqrt(dx*dx + dy*dy);
-	}
-};
-
-Sprite sprite(16, 16);
-
 WallDepthInfo ZBuffer[SCREEN_WIDTH];
 
 int main(int argc, char* argv[])
@@ -107,7 +88,9 @@ int main(int argc, char* argv[])
 	Texture wall4(ren, projectPath + "../img/wall_4.bmp");
 	Texture lights(ren, projectPath + "../img/lights_1.bmp");
 
-	sprite.texture = loadImage("../img/sprite.bmp", true);
+	Sprite sprite(16, 16);
+	sprite.SetTexture(ren,"../img/sprite.bmp", SDL_BLENDMODE_BLEND);
+	sprite.SetScale(0.5f, 0.5f);
 	
 	Vec2 pos(22.0f, 12.0f);		//x and y start position
 	Vec2 dir(-1.0f, 0.0f);		//initial direction vector
@@ -225,56 +208,11 @@ int main(int argc, char* argv[])
 		}
 
 		//SPRITE CASTING
-		//translate sprite position to relative to camera
-		float spriteX = sprite.x - pos.x;
-		float spriteY = sprite.y - pos.y;
 
-		//transform sprite with the inverse camera matrix
-		// [ plane.x   dir.x ] -1                                       [ dir.y      -dir.x ]
-		// [               ]       =  1/(plane.x*dir.y-dir.x*plane.y) *   [                 ]
-		// [ plane.y   dir.y ]                                          [ -plane.y  plane.x ]
+		sprite.SetTransform(pos, dir, plane);
 
-		float invDet = 1.0f / (plane.x * dir.y - dir.x * plane.y); //required for correct matrix multiplication
-
-		Vec2 transform;
-		transform.x = invDet * (dir.y * spriteX - dir.x * spriteY);
-		transform.y = invDet * (-plane.y * spriteX + plane.x * spriteY); //this is actually the depth inside the screen, that what Z is in 3D       
-
-		int spriteScreenX = int((w / 2) * (1 + transform.x / transform.y));
-
-		//calculate height of the sprite on screen
-		int spriteHeight = abs(int(h / (transform.y))); //using "transformY" instead of the real distance prevents fisheye
-		//calculate lowest and highest pixel to fill in current stripe
-		int drawStartY = -spriteHeight / 2 + h / 2;
-		//if (drawStartY < 0) drawStartY = 0;
-		int drawEndY = spriteHeight / 2 + h / 2;
-		//if (drawEndY >= h) drawEndY = h - 1;
-
-		//calculate width of the sprite
-		int spriteWidth = abs(int(h / (transform.y)));
-		int drawStartX = -spriteWidth / 2 + spriteScreenX;
-		if (drawStartX < 0) drawStartX = 0;
-		int drawEndX = spriteWidth / 2 + spriteScreenX;
-		if (drawEndX >= w) drawEndX = w - 1;
-
-		//loop through every vertical stripe of the sprite on screen
-		if ( drawStartY >= 0 )
-		for (int stripe = drawStartX; stripe < drawEndX + 1; stripe++)
-		{
-			int texX = int(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * 16 / spriteWidth) / 256;
-			//the conditions in the if are:
-			//1) it's in front of camera plane so you don't see things behind you
-			//2) it's on the screen (left)
-			//3) it's on the screen (right)
-			//4) ZBuffer, with perpendicular distance
-			if (transform.y > 0 && stripe > 0 && stripe < w && transform.y < ZBuffer[stripe].perpDist)
-			{
-				//TODO: make sprites scale past screen height as the player aproaches instead of just dissapearing
-				SDL_Rect samp{ texX, 0, 1, 16 };
-				SDL_Rect dest{ stripe, drawStartY, 1, drawEndY - drawStartY };
-				SDL_RenderCopy(ren, sprite.texture, &samp, &dest);
-			}
-		}
+		sprite.Render(ZBuffer);
+		
 		
 	    //timing for input and FPS counter
 		oldTime = time;
@@ -299,8 +237,7 @@ int main(int argc, char* argv[])
 		getMouseState(mouseX, mouseY, mouseL, mouseR);
 		if (mouseL)
 		{
-			sprite.x = pos.x + dir.x * 1.5f;
-			sprite.y = pos.y + dir.y * 1.5f;
+			sprite.SetPos( pos + dir * 1.5f);
 		}
 		//strafe to the right
 		if (keyDown(SDLK_RIGHT) || keyDown(SDLK_s))
@@ -325,7 +262,7 @@ int main(int argc, char* argv[])
 		{
 			if(worldMap[int(pos.x - dir.x * moveSpeed)][int(pos.y)] == false) pos.x -= dir.x * moveSpeed;
 			if(worldMap[int(pos.x)][int(pos.y - dir.y * moveSpeed)] == false) pos.y -= dir.y * moveSpeed;
-		}	
+		}
 		//rotate to the right
 		if (mouseXDist > 0 )
 		{
@@ -371,6 +308,37 @@ void print(float num)
 	//std::cout << num << std::endl;
 }
 
+std::string getProjectPath(const std::string &subDir) {
+	//We need to choose the path separator properly based on which
+	//platform we're running on, since Windows uses a different
+	//separator than most systems
+#ifdef _WIN32
+	const char PATH_SEP = '\\';
+#else
+	const char PATH_SEP = '/';
+#endif
+	//This will hold the base resource path: Lessons/res/
+	//We give it static lifetime so that we'll only need to call
+	//SDL_GetBasePath once to get the executable path
+	static std::string baseRes;
+	if (baseRes.empty()){
+		//SDL_GetBasePath will return NULL if something went wrong in retrieving the path
+		char *basePath = SDL_GetBasePath();
+		if (basePath){
+			baseRes = basePath;
+			SDL_free(basePath);
+		}
+		else {
+			std::cerr << "Error getting resource path: " << SDL_GetError() << std::endl;
+			return "";
+		}
+	}
+	//If we want a specific subdirectory path in the resource directory
+	//append it to the base path. This would be something like Lessons/res/Lesson0
+	return subDir.empty() ? baseRes : baseRes + subDir + PATH_SEP;
+}
+
+/*
 SDL_Texture* loadImage(std::string path, bool transparent)
 {
 	static std::string projectPath = getProjectPath();
@@ -405,5 +373,5 @@ SDL_Texture* loadImage(std::string path, bool transparent)
 
 	SDL_FreeSurface(bmp);
     return tex;
-}
+}*/
 
