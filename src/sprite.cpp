@@ -14,13 +14,16 @@ void Sprite::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode b
 {
 	// delete the current texture if there is one
 	if (texture_) delete texture_;
+	texture_ = nullptr;
 	
 	// load the new texture
 	texture_ = new Texture(ren, filePath, blendmode);
 }
 
-void Sprite::Render(WallDepthInfo* zBuffer)
+void Sprite::Render(Vec2 cameraPos, Vec2 cameraDir, Vec2 cameraPlane, WallDepthInfo* zBuffer)
 {
+	SetTransform(cameraPos, cameraDir, cameraPlane);
+
 	// spriteScreenX is the xCoord of the centre of the sprite
 	int spriteScreenX = int((SCREEN_WIDTH / 2) * (1 + transform_.x / transform_.y));
 
@@ -87,9 +90,9 @@ void Sprite::SetTransform(Vec2 cameraPos, Vec2 cameraDir, Vec2 camerPlane)
 	transform_.y = invDet * (-camerPlane.y * transPos.x + camerPlane.x * transPos.y); //this is actually the depth inside the screen, that what Z is in 3D   
 }
 
-float Sprite::Distance(Vec2 v)
+float Sprite::Distance(Vec2 point) const
 {
-	return (pos_ - v).length();
+	return (pos_ - point).length();
 }
 
 

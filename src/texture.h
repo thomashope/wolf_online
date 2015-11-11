@@ -18,7 +18,7 @@ public:
 	int Height() { return height_; }
 
 private:
-	SDL_Texture* texture_ = nullptr;
+	SDL_Texture* texture_;
 	SDL_Renderer* renderTarget_;
 	int width_;
 	int height_;

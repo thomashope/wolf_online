@@ -1,6 +1,8 @@
 #include "texture.h"
 
-Texture::Texture(SDL_Renderer* renderTarget, std::string filePath, SDL_BlendMode blendMode) :renderTarget_(renderTarget)
+Texture::Texture(SDL_Renderer* renderTarget, std::string filePath, SDL_BlendMode blendMode) :
+renderTarget_(renderTarget),
+texture_(nullptr)
 {
 	// load the file into a surface
 	SDL_Surface *bmp = SDL_LoadBMP(filePath.c_str());
@@ -49,6 +51,7 @@ Texture::~Texture()
 	{
 		SDL_DestroyTexture(texture_);
 	}
+	texture_ = nullptr;
 }
 
 void Texture::RenderRect(SDL_Rect* sample, SDL_Rect* dest)

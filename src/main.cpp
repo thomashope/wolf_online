@@ -25,6 +25,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
+#include <algorithm>
 
 #include "SDLsetup.h"
 #include "InstantCG.h"
@@ -88,9 +89,14 @@ int main(int argc, char* argv[])
 	Texture wall4(ren, projectPath + "../img/wall_4.bmp");
 	Texture lights(ren, projectPath + "../img/lights_1.bmp");
 
-	Sprite sprite(16, 16);
-	sprite.SetTexture(ren,"../img/sprite.bmp", SDL_BLENDMODE_BLEND);
-	sprite.SetScale(0.5f, 0.5f);
+	std::vector<Sprite*> sprites;
+	sprites.push_back(new Sprite(16, 16));
+	sprites.push_back(new Sprite(20, 16));
+	sprites.push_back(new Sprite(16, 20));
+	sprites[0]->SetTexture(ren, "../img/sprite_1.bmp", SDL_BLENDMODE_BLEND);
+	sprites[1]->SetTexture(ren, "../img/sprite_2.bmp", SDL_BLENDMODE_BLEND);
+	sprites[2]->SetTexture(ren, "../img/sprite_3.bmp", SDL_BLENDMODE_BLEND);
+	sprites[2]->SetScale(0.5f, 0.5f);
 	
 	Vec2 pos(22.0f, 12.0f);		//x and y start position
 	Vec2 dir(-1.0f, 0.0f);		//initial direction vector
@@ -207,12 +213,24 @@ int main(int argc, char* argv[])
 			ZBuffer[x].bottom = lineHeight / 2 + h / 2;
 		}
 
-		//SPRITE CASTING
+		// Render The Sprites
+		{
+			// sort the sprites so the are drawn from back to front
+			struct ByDistance {
+				ByDistance(Vec2 to):to_(to){}
+				Vec2 to_;
+				bool operator() (Sprite* a, Sprite* b) {
+					return (a->Distance(to_) > b->Distance(to_));
+				}
+			} byDistance(pos);
 
-		sprite.SetTransform(pos, dir, plane);
-
-		sprite.Render(ZBuffer);
-		
+			std::sort(sprites.begin(), sprites.end(), byDistance);
+						
+			for (auto sprite : sprites)
+			{					  
+				sprite->Render(pos, dir, plane, ZBuffer);
+			}
+		}
 		
 	    //timing for input and FPS counter
 		oldTime = time;
@@ -237,7 +255,7 @@ int main(int argc, char* argv[])
 		getMouseState(mouseX, mouseY, mouseL, mouseR);
 		if (mouseL)
 		{
-			sprite.SetPos( pos + dir * 1.5f);
+			sprites[0]->SetPos( pos + dir * 1.5f);
 		}
 		//strafe to the right
 		if (keyDown(SDLK_RIGHT) || keyDown(SDLK_s))
@@ -277,7 +295,12 @@ int main(int argc, char* argv[])
 		}
 	} // END OF GAME LOOP
 
+
 	// clean up
+	for (auto sprite : sprites) {
+		delete sprite;
+	}
+
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
 	SDL_Quit();

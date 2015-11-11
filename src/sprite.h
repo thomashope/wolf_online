@@ -18,11 +18,11 @@ public:
 
 	void SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode blendmode = SDL_BLENDMODE_NONE);
 
-	void SetTransform(Vec2 cameraPos, Vec2 cameraDir, Vec2 camerPlane);
 
-	void Render(WallDepthInfo* zBuffer);
+	void Render(Vec2 cameraPos, Vec2 cameraDir, Vec2 cameraPlane, WallDepthInfo* zBuffer);
 
-	float Distance(Vec2 v);
+	// distance betwee the given point and the sprite
+	float Distance(Vec2 point) const;
 
 	/* SETTERS */
 	
@@ -35,12 +35,15 @@ public:
 
 	/* GETTERS */
 
-	Texture* TexturePtr() { return texture_; }
-	Vec2 Transform() { return transform_; }	
-	int Offset() { return vOffset_; }
-	Vec2 Scale() { return scale_; }
+	Texture* TexturePtr() const { return texture_; }
+	Vec2 Transform() const { return transform_; }	
+	int Offset() const { return vOffset_; }
+	Vec2 Scale() const { return scale_; }
 
 private:
+	//TODO: pass in a whole camera class
+	void SetTransform(Vec2 cameraPos, Vec2 cameraDir, Vec2 camerPlane);
+
 	// position in the world
 	Vec2 pos_;
 
