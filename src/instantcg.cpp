@@ -60,6 +60,7 @@ SDL_Texture* scr; // used in drawBuffer()
 // visit https://wiki.libsdl.org/CategoryKeyboard for description of scancodes vs keycodes
 
 //Converts keycodes to the layout independent scancodes
+/*
 bool keyDown(SDL_Keycode key)
 {
     return (inkeys[SDL_GetScancodeFromKey(key)] != 0);
@@ -69,7 +70,7 @@ bool keyDown(SDL_Keycode key)
 bool keyDown(SDL_Scancode key)
 {
     return (inkeys[key] != 0);
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////
 //BASIC SCREEN FUNCTIONS////////////////////////////////////////////////////////
@@ -199,6 +200,7 @@ void waitFrame(double oldTime, double frameDuration) //in seconds
 }
 
 //Returns 1 if you close the window or press the escape key. Also handles everything thats needed per frame.
+/*
 bool done(bool quit_if_esc, bool delay)
 {
 	if (delay) SDL_Delay(5); //So it consumes less processing power
@@ -210,7 +212,7 @@ bool done(bool quit_if_esc, bool delay)
 			keyDown(SDL_SCANCODE_ESCAPE)) return true;
 	}
 	return false;
-}
+}*/
 
 //Ends the program
 void end()

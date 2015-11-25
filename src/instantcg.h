@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef INSTANTCG_H
 #define INSTANTCG_H
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 #include <iostream>
 #include <string>
@@ -169,8 +169,8 @@ extern SDL_Renderer* ren;
 //KEYBOARD FUNCTIONS////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-bool keyDown(SDL_Keycode key);  // checks if the key is held down, true as long as the key is held
-bool keyDown(SDL_Scancode key); // checks if the key is held down, true as long as the key is held
+//bool keyDown(SDL_Keycode key);  // checks if the key is held down, true as long as the key is held
+//bool keyDown(SDL_Scancode key); // checks if the key is held down, true as long as the key is held
 
 ////////////////////////////////////////////////////////////////////////////////
 //BASIC SCREEN FUNCTIONS////////////////////////////////////////////////////////

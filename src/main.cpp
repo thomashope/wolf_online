@@ -26,88 +26,165 @@
 
 #include <iostream>
 #include <algorithm>
+#include <SDL2/SDL_net.h>
 
-#include "SDLsetup.h"
 #include "InstantCG.h"
 #include "sprite.h"
-//#include "vec2.h"
+#include "input.h"
+#include "world.h"
 using namespace InstantCG;
+
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
+#define MAP_WIDTH 24
+#define MAP_HEGIHT 24
+
+#define SERVERIP "127.0.0.1"
+#define SERVERPORT 1177
 
 // function prototypes
 void print(float num);
 bool processEvents();
-std::string getProjectPath(const std::string &subDir = "");
+//std::string getProjectPath(const std::string &subDir = "");
 //SDL_Texture* loadImage(std::string path, bool transparent = false);
 
-#define MAP_WIDTH 24
-#define MAP_HEGIHT 24
 bool fullscreen = false;
-std::string projectPath = getProjectPath();
+//std::string projectPath = getProjectPath();
+
+// reinterperate the bits of a float as a Uint32
+// Assumes sizeof(float) == 4 !!!!
+// http://stackoverflow.com/questions/20762952/most-efficient-standard-compliant-way-of-reinterpreting-int-as-float
+Uint32 floatToUint32(float f)
+{
+	Uint32 i = 0;
+	char* iPtr = (char*)&i;
+	char* fPtr = (char*)&f;
+	memcpy(iPtr, fPtr, 4);
+	return i;
+}
 
 // globals
 int mouseXDist; // horizontal distance traveled by the mouse
 
-char worldMap[MAP_WIDTH][MAP_HEGIHT] =
+
+char mapData[MAP_WIDTH * MAP_HEGIHT] =
 {
-  {4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4},
-  {4,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,2,2,0,0,0,0,0,0,0,0,0,3,0,3,0,3,0,0,0,4},
-  {4,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,3,0,0,0,4},
-  {4,3,3,3,0,0,3,3,3,3,0,0,0,0,0,2,0,0,0,2,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,3,0,3,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,5,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-  {4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4}
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,2,2,0,0,0,0,0,0,0,0,0,3,0,3,0,3,0,0,0,1,
+  1,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,3,0,0,0,1,
+  1,3,3,3,0,0,3,3,3,3,0,0,0,0,0,2,0,0,0,2,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,3,0,3,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,3,3,3,3,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,4,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 };
 
 WallDepthInfo ZBuffer[SCREEN_WIDTH];
 
 int main(int argc, char* argv[])
 {
-    screen(SCREEN_WIDTH, SCREEN_HEIGHT, fullscreen);
-    SDL_SetRelativeMouseMode( SDL_bool(true) ); // lock the cursor to the window
-
-	// loading in the textures
-	Texture wall1(ren, projectPath + "../img/wall_1.bmp");
-	Texture wall2(ren, projectPath + "../img/wall_2.bmp");
-	Texture wall3(ren, projectPath + "../img/wall_3.bmp");
-	Texture wall4(ren, projectPath + "../img/wall_4.bmp");
-	Texture lights(ren, projectPath + "../img/lights_1.bmp");
-
-	std::vector<Sprite*> sprites;
-	sprites.push_back(new Sprite(16, 16));
-	sprites.push_back(new Sprite(20, 16));
-	sprites.push_back(new Sprite(16, 20));
-	sprites[0]->SetTexture(ren, "../img/sprite_1.bmp", SDL_BLENDMODE_BLEND);
-	sprites[1]->SetTexture(ren, "../img/sprite_2.bmp", SDL_BLENDMODE_BLEND);
-	sprites[2]->SetTexture(ren, "../img/sprite_3.bmp", SDL_BLENDMODE_BLEND);
-	sprites[2]->SetScale(0.5f, 0.5f);
+	SDL_Init( SDL_INIT_EVERYTHING );
 	
-	Vec2 pos(22.0f, 12.0f);		//x and y start position
-	Vec2 dir(-1.0f, 0.0f);		//initial direction vector
-	Vec2 plane(0.0f, 0.66f);	//the 2d raycaster version of camera plane
+	// MAKE SURE FLOATS ARE 4 BYTES IN SIZE, OTHERWISE PACKETS WILL BE ILL FORMED!
+	SDL_assert(sizeof(float) == 4);
+
+	//// SETUP SDL_net
+	if( SDLNet_Init() == -1 ) {
+		std::cout << "SDLNet_Init: %s\n" << SDLNet_GetError() << std::endl;
+		exit(2);
+	}
+	IPaddress address;
+	UDPsocket UDP_server;
+	UDPpacket* UDP_send_packet;
+
+	// Resolve server name
+	if( SDLNet_ResolveHost(&address, SERVERIP, SERVERPORT) == -1 )
+	{
+		fprintf(stderr, "SDLNet_ResolveHost(%s %d): %s\n", SERVERIP, SERVERPORT, SDLNet_GetError());
+		exit(EXIT_FAILURE);
+	}
+	// Open a socket on random port
+	if( !(UDP_server = SDLNet_UDP_Open(0)) )
+	{
+		fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
+		exit(EXIT_FAILURE);
+	}
+	// Allocate memory for the packet
+	if( !(UDP_send_packet = SDLNet_AllocPacket(128)) )
+	{
+		fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
+		exit(EXIT_FAILURE);
+	}
+
+	// Setup the packet
+	UDP_send_packet->address.host = address.host;	// Set the destination host
+	UDP_send_packet->address.port = address.port;	// Set the destination port
+	UDP_send_packet->len = 10;						// Packet size in bytes
+
+	UDP_send_packet->data[0] = 0;										// Packet Type
+	UDP_send_packet->data[1] = 10;										// OwnerID
+	SDLNet_Write32(floatToUint32(1.2345f), &UDP_send_packet->data[2]);	// X position
+	SDLNet_Write32(floatToUint32(9.8765f), &UDP_send_packet->data[6]);	// Y position
+
+	std::cout << "Sending hello" << std::endl;
+	SDLNet_UDP_Send(UDP_server, -1, UDP_send_packet);
+
+
+	// Initialise SDL and the screen
+	Screen screen( SCREEN_WIDTH, SCREEN_HEIGHT, "wolf_client" );
+	Input input;						// init the input handler
+	Player player;						// stores player data
+	player.pos.set(22.0f, 12.0f);		// x and y start position
+	//player.Dir(-1.0f, 0.0f);			// initial direction vector
+	//player.Plane(0.0f, 0.66f);		// the 2d raycaster version of camera plane
+	bool sendPosition = false;	//
+
+	World world(&screen);
+	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
 
 	double time = 0;			//time of current frame
 	double oldTime = 0;			//time of previous frame
+	
+	//// loading in the textures
+	//Texture wall1(ren, projectPath + "../img/wall_1.bmp");
+	//Texture wall2(ren, projectPath + "../img/wall_2.bmp");
+	//Texture wall3(ren, projectPath + "../img/wall_3.bmp");
+	//Texture wall4(ren, projectPath + "../img/wall_4.bmp");
+	//Texture lights(ren, projectPath + "../img/lights_1.bmp");
+
+	std::vector<Sprite*> sprites;
+	//sprites.push_back(new Sprite(16, 16));
+	//sprites.push_back(new Sprite(20, 16));
+	//sprites.push_back(new Sprite(16, 20));
+	//sprites[0]->SetTexture(ren, "../img/sprite_1.bmp", SDL_BLENDMODE_BLEND);
+	//sprites[1]->SetTexture(ren, "../img/sprite_2.bmp", SDL_BLENDMODE_BLEND);
+	//sprites[2]->SetTexture(ren, "../img/sprite_3.bmp", SDL_BLENDMODE_BLEND);
+	//sprites[2]->SetScale( 0.5f, 0.5f );
 
 	std::cout << "Starting Game Loop..." << std::endl;
-	while( !processEvents() )	// START OF GAME LOOP
+	while( !input.AskedToQuit() )	// START OF GAME LOOP
 	{
+		input.PorcessEvents();
+
+		world.Render( player );
+
+		/*
 		for( int x = 0; x < w; x++ )
 		{
 			//calculate ray position and direction
@@ -212,8 +289,9 @@ int main(int argc, char* argv[])
 			ZBuffer[x].top = -lineHeight / 2 + h / 2;
 			ZBuffer[x].bottom = lineHeight / 2 + h / 2;
 		}
+		*/
 
-		// Render The Sprites
+		/*// Render The Sprites
 		{
 			// sort the sprites so the are drawn from back to front
 			struct ByDistance {
@@ -222,77 +300,94 @@ int main(int argc, char* argv[])
 				bool operator() (Sprite* a, Sprite* b) {
 					return (a->Distance(to_) > b->Distance(to_));
 				}
-			} byDistance(pos);
+			} byDistance(player.pos);
 
 			std::sort(sprites.begin(), sprites.end(), byDistance);
-						
+			
+			// render them in the new order
 			for (auto sprite : sprites)
 			{					  
-				sprite->Render(pos, dir, plane, ZBuffer);
+				sprite->Render(player.pos, player.dir, player.plane, ZBuffer);
 			}
-		}
+		}*/
 		
 	    //timing for input and FPS counter
 		oldTime = time;
 		time = getTicks();
 		double frameTime = (time - oldTime) / 1000.0; //frameTime is the time this frame has taken, in seconds
-		print(float(1.0 / frameTime)); //FPS counter
-		redraw();
-		cls();
+		//redraw();
+		//cls();
 
         // draw ground and sky
-        drawRect(0,   0, w, h/2, RGB_Black);
-        drawRect(0, h/2, w, h  , RGB_Gray);
+        //drawRect(0,   0, w, h/2, RGB_Black);
+        //drawRect(0, h/2, w, h  , RGB_Gray);
 
 		//speed modifiers
 		float moveSpeed = (float)frameTime * 5.0f; //the constant value is in squares/second
 		float rotSpeed = (float)frameTime * 90.0f; //the constant value is in degrees/second
-        if( mouseXDist > 0 ) rotSpeed *= mouseXDist * 0.2f;
-        else if( mouseXDist < 0 ) rotSpeed *= mouseXDist * -0.2f;
+		if( input.XMotion( ) > 0 ) rotSpeed *= input.XMotion( ) *  0.2f;
+		else if( input.XMotion( ) < 0 ) rotSpeed *= input.XMotion( ) * -0.2f;
 		
 		int mouseX, mouseY;
 		bool mouseL, mouseR;
 		getMouseState(mouseX, mouseY, mouseL, mouseR);
+		/*
 		if (mouseL)
 		{
 			sprites[0]->SetPos( pos + dir * 1.5f);
-		}
+		}*/
+
 		//strafe to the right
-		if (keyDown(SDLK_RIGHT) || keyDown(SDLK_s))
+		if( input.KeyDown( SDL_SCANCODE_D ) )
 		{
-			if (worldMap[int(pos.x + dir.y * moveSpeed)][int(pos.y)] == false) pos.x += dir.y * moveSpeed;
-			if (worldMap[int(pos.x)][int(pos.y + -dir.x * moveSpeed)] == false) pos.y += -dir.x * moveSpeed;
+			if (world.GetGrid(int(player.pos.x + player.dir.y * moveSpeed),int(player.pos.y)) == false) player.pos.x += player.dir.y * moveSpeed;
+			if (world.GetGrid(int(player.pos.x), int(player.pos.y + -player.dir.x * moveSpeed)) == false) player.pos.y += -player.dir.x * moveSpeed;
+			sendPosition = true;
 		}
 		//strafe to the left
-		if (keyDown(SDLK_LEFT) || keyDown(SDLK_a))
+		if( input.KeyDown( SDL_SCANCODE_A ) )
 		{
-			if (worldMap[int(pos.x + -dir.y * moveSpeed)][int(pos.y)] == false) pos.x += -dir.y * moveSpeed;
-			if (worldMap[int(pos.x)][int(pos.y + dir.x * moveSpeed)] == false) pos.y += dir.x * moveSpeed;
+			if( world.GetGrid( int( player.pos.x + -player.dir.y * moveSpeed ), int( player.pos.y ) ) == false ) player.pos.x += -player.dir.y * moveSpeed;
+			if( world.GetGrid( int( player.pos.x ), int( player.pos.y + player.dir.x * moveSpeed ) ) == false )  player.pos.y += player.dir.x * moveSpeed;
+			sendPosition = true;
 		}
 		//move forward if no wall in front of you
-		if (keyDown(SDLK_UP) || keyDown(SDLK_w) )
+		if( input.KeyDown( SDL_SCANCODE_W ) )
 		{
-			if(worldMap[int(pos.x + dir.x * moveSpeed)][int(pos.y)] == false) pos.x += dir.x * moveSpeed;
-			if(worldMap[int(pos.x)][int(pos.y + dir.y * moveSpeed)] == false) pos.y += dir.y * moveSpeed;
+			if( world.GetGrid( int( player.pos.x + player.dir.x * moveSpeed ), int( player.pos.y ) ) == false ) player.pos.x += player.dir.x * moveSpeed;
+			if( world.GetGrid( int( player.pos.x ), int( player.pos.y + player.dir.y * moveSpeed ) ) == false ) player.pos.y += player.dir.y * moveSpeed;
+			sendPosition = true;
 		}
 		//move backwards if no wall behind you
-		if (keyDown(SDLK_DOWN) || keyDown(SDLK_r) )
+		if( input.KeyDown( SDL_SCANCODE_S ) )
 		{
-			if(worldMap[int(pos.x - dir.x * moveSpeed)][int(pos.y)] == false) pos.x -= dir.x * moveSpeed;
-			if(worldMap[int(pos.x)][int(pos.y - dir.y * moveSpeed)] == false) pos.y -= dir.y * moveSpeed;
+			if( world.GetGrid(int( player.pos.x - player.dir.x * moveSpeed ), int( player.pos.y )) == false ) player.pos.x -= player.dir.x * moveSpeed;
+			if( world.GetGrid(int( player.pos.x ), int( player.pos.y - player.dir.y * moveSpeed )) == false ) player.pos.y -= player.dir.y * moveSpeed;
+			sendPosition = true;
 		}
 		//rotate to the right
-		if (mouseXDist > 0 )
+		if( input.XMotion() > 0 )
 		{
-			dir = dir.rotate(-rotSpeed);
-			plane = plane.rotate(-rotSpeed);
+			player.dir = player.dir.rotate( -rotSpeed );
+			player.plane = player.plane.rotate( -rotSpeed );
 		}
 		//rotate to the left
-		if (mouseXDist < 0 )
+		if( input.XMotion() < 0 )
 		{
-			dir = dir.rotate(rotSpeed);
-			plane = plane.rotate(rotSpeed);
+			player.dir = player.dir.rotate( rotSpeed );
+			player.plane = player.plane.rotate( rotSpeed );
 		}
+
+		if( sendPosition )
+		{
+			SDLNet_Write32( floatToUint32( player.pos.x ), &UDP_send_packet->data[2] );	// X position
+			SDLNet_Write32( floatToUint32( player.pos.y ), &UDP_send_packet->data[6] );	// Y position
+			SDLNet_UDP_Send( UDP_server, -1, UDP_send_packet );
+			sendPosition = false;
+		}
+
+		screen.Display();
+
 	} // END OF GAME LOOP
 
 
@@ -301,13 +396,17 @@ int main(int argc, char* argv[])
 		delete sprite;
 	}
 
-	SDL_DestroyRenderer(ren);
-	SDL_DestroyWindow(win);
-	SDL_Quit();
+	SDLNet_FreePacket(UDP_send_packet);
+	SDLNet_Quit( );
+
+	screen.~Screen();
+
+	SDL_Quit( );
 
 	return 0;
 }
 
+/*
 bool processEvents()
 {
     SDL_Event event;
@@ -324,13 +423,9 @@ bool processEvents()
         }
     }
     return false;
-}
+}*/
 
-void print(float num)
-{
-	//std::cout << num << std::endl;
-}
-
+/*
 std::string getProjectPath(const std::string &subDir) {
 	//We need to choose the path separator properly based on which
 	//platform we're running on, since Windows uses a different
@@ -359,7 +454,7 @@ std::string getProjectPath(const std::string &subDir) {
 	//If we want a specific subdirectory path in the resource directory
 	//append it to the base path. This would be something like Lessons/res/Lesson0
 	return subDir.empty() ? baseRes : baseRes + subDir + PATH_SEP;
-}
+}*/
 
 /*
 SDL_Texture* loadImage(std::string path, bool transparent)

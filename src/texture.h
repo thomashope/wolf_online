@@ -1,5 +1,5 @@
 #ifndef TEXTURE_H
-#define TEXTURE_h
+#define TEXTURE_H
 
 #include <SDL.h>
 #include <string>
