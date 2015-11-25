@@ -26,7 +26,7 @@ public:
 	inline float length() const { return std::sqrt(x*x + y*y); }
 	
 	inline Vec2 normal() const { return Vec2(*this / length()); }
-	inline Vec2& normalize() { set(normal()); }
+	inline Vec2& normalize() { set(normal()); return *this; }
 
 	// stanadard vector arithmetic operators
 	inline Vec2 operator + (const Vec2& v) const { return Vec2(x + v.x, y + v.y); }
