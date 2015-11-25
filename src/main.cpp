@@ -52,7 +52,8 @@ char mapData[MAP_WIDTH * MAP_HEGIHT] =
 };
 
 void init(); // initalises libraries
-void quit(); // quits libraries and exits the program
+void quit(std::string message = "");	// quits libraries and exits the program
+										// pass a string to show an error on exit
 
 int main(int argc, char* argv[])
 {	
@@ -102,7 +103,7 @@ int main(int argc, char* argv[])
 
 	if( !TCP_conection.Connect( player, SERVERIP, SERVERPORT ) )
 	{
-		quit();
+		quit("failed to make TCP connection");
 	}
 	
 	Uint32 time = 0;			//time of current frame
@@ -112,9 +113,7 @@ int main(int argc, char* argv[])
 	Screen screen( SCREEN_WIDTH, SCREEN_HEIGHT, "wolf_client" );
 	Input input;						// init the input handler
 	player.pos.set(22.0f, 12.0f);		// x and y start position
-	//player.Dir(-1.0f, 0.0f);			// initial direction vector
-	//player.Plane(0.0f, 0.66f);		// the 2d raycaster version of camera plane
-	bool sendPosition = false;	//
+	//bool sendPosition = false;	//
 
 	World world(&screen);
 	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
@@ -204,8 +203,18 @@ void init()
 	}
 }
 
-void quit()
+void quit(std::string message)
 {
+	if( !message.empty() )
+	{
+#ifdef _DEBUG
+		std::cerr << "Error: " << message << std::endl;
+		abort();
+#else
+		exit( 1 );
+#endif
+	}
+
 	SDLNet_Quit();
 	SDL_Quit();
 

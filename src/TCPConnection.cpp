@@ -1,7 +1,7 @@
 #include "TCPConnection.h"
 #include "world.h"
-#include "JoinRequestPacket.h"
-#include "JoinResponsePacket.h"
+#include "packets/JoinRequest.h"
+#include "packets/JoinResponse.h"
 #include "player.h"
 
 TCPConnection::TCPConnection() :
@@ -40,6 +40,8 @@ bool TCPConnection::Connect(Player& player, std::string host, Uint16 port)
 		return false;
 	}
 	
+	std::cout << "Established connection, requesting join..." << std::endl;
+
 	JoinRequestPacket request;
 	JoinResponsePacket response;
 
@@ -57,7 +59,7 @@ bool TCPConnection::Connect(Player& player, std::string host, Uint16 port)
 	}
 
 	player.ID = response.GetGivenID();
-	std::cout << "Ther server assigned you an ID of " << player.ID << std::endl;
+	std::cout << "The server assigned you an ID of " << (int)player.ID << std::endl;
 
 	// return success
 	return true;

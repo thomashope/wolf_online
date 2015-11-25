@@ -2,6 +2,7 @@
 #define BASEPACKET_H
 
 #include <iostream>
+#include <SDL2/SDL.h>
 
 // First byte of a packet should always be the type
 enum PacketType {

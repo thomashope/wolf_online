@@ -14,7 +14,7 @@ enum JoinResponse {
 
 class JoinResponsePacket : public BasePacket {
 public:
-	JoinResponsePacket() :BasePacket( 12 ) {
+	JoinResponsePacket() :BasePacket( 3 ) {
 		data_[0] = PT_JOIN_RESPONSE;
 	}
 	~JoinResponsePacket() {}
