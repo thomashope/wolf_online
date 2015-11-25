@@ -11,12 +11,12 @@ public:
 
 	void PorcessEvents();
 
-	bool KeyDown(SDL_Scancode key);
+	bool KeyDown(SDL_Scancode key) const;
 
-	bool AskedToQuit() { return askedToQuit_; }
+	bool AskedToQuit() const { return askedToQuit_; }
 
-	// change this so it's handled inside the player
-	int XMotion() { return mouse_.xMotion; }
+	// TODO: change this so it's handled inside the player, friend of player?
+	int XMotion() const { return mouse_.xMotion; }
 
 private:
 

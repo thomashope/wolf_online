@@ -47,7 +47,7 @@ void Input::PorcessEvents()
 	StoreOldKeyboard( );
 }
 
-bool Input::KeyDown( SDL_Scancode key )
+bool Input::KeyDown( SDL_Scancode key ) const
 {
 	return keyboard_[key];
 }

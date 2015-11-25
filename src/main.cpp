@@ -1,28 +1,4 @@
-//
-// This is a port of the raycaster Lode into SDL2
-// http://lodev.org/cgtutor/raycasting.html
-//
 
-// Copyright (c) 2004-2007, Lode Vandevenne
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-//
-//     * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 #include <algorithm>
@@ -160,13 +136,6 @@ int main(int argc, char* argv[])
 
 	double time = 0;			//time of current frame
 	double oldTime = 0;			//time of previous frame
-	
-	//// loading in the textures
-	//Texture wall1(ren, projectPath + "../img/wall_1.bmp");
-	//Texture wall2(ren, projectPath + "../img/wall_2.bmp");
-	//Texture wall3(ren, projectPath + "../img/wall_3.bmp");
-	//Texture wall4(ren, projectPath + "../img/wall_4.bmp");
-	//Texture lights(ren, projectPath + "../img/lights_1.bmp");
 
 	std::vector<Sprite*> sprites;
 	//sprites.push_back(new Sprite(16, 16));
@@ -180,117 +149,16 @@ int main(int argc, char* argv[])
 	std::cout << "Starting Game Loop..." << std::endl;
 	while( !input.AskedToQuit() )	// START OF GAME LOOP
 	{
+		oldTime = time;
+		time =  SDL_GetTicks();
+		float deltaTime = (time - oldTime) / 1000.0f; //frameTime is the time this frame has taken, in seconds
+		
 		input.PorcessEvents();
 
+		player.Update( world, input, deltaTime );
+
 		world.Render( player );
-
-		/*
-		for( int x = 0; x < w; x++ )
-		{
-			//calculate ray position and direction
-			float cameraX = 2 * x / float(w) - 1; //x-coordinate in camera space
-			Vec2 rayPos(pos);
-			Vec2 rayDir = dir + plane * cameraX;
-
-			//which box of the map we're in
-			int mapX = int( rayPos.x );
-			int mapY = int( rayPos.y );
-
-			//length of ray from current position to next x or y-side
-			Vec2 sideDist;
-
-			//length of ray from one x or y-side to next x or y-side
-			Vec2 deltaDist;
-			deltaDist.x = sqrt( 1 + (rayDir.y * rayDir.y) / (rayDir.x * rayDir.x) );
-			deltaDist.y = sqrt( 1 + (rayDir.x * rayDir.x) / (rayDir.y * rayDir.y) );
-
-			//what direction to step in x or y-direction (either +1 or -1)
-			int stepX;
-			int stepY;
-
-			int hit = 0; //was there a wall hit?
-			int side; //was a NS or a EW wall hit?
-
-			//calculate step and initial sideDist
-			if( rayDir.x < 0 )
-			{
-				stepX = -1;
-				sideDist.x = (rayPos.x - mapX) * deltaDist.x;
-			}
-			else
-			{
-				stepX = 1;
-				sideDist.x = (mapX + 1.0f - rayPos.x) * deltaDist.x;
-			}
-			if( rayDir.y < 0 )
-			{
-				stepY = -1;
-				sideDist.y = (rayPos.y - mapY) * deltaDist.y;
-			}
-			else
-			{
-				stepY = 1;
-				sideDist.y = (mapY + 1.0f - rayPos.y) * deltaDist.y;
-			}
-
-			//perform DDA
-			while( hit == 0 )
-			{
-				//jump to next map square, OR in x-direction, OR in y-direction
-				if( sideDist.x < sideDist.y )
-				{
-					sideDist.x += deltaDist.x;
-					mapX += stepX;
-					side = 0;
-				}
-				else
-				{
-					sideDist.y += deltaDist.y;
-					mapY += stepY;
-					side = 1;
-				}
-				//Check if ray has hit a wall
-				if( worldMap[mapX][mapY] > 0 ) hit = 1;
-			}
-
-			//Calculate distance projected on camera direction (oblique distance will give fisheye effect!)
-			if( side == 0 )
-				ZBuffer[x].perpDist = fabs( (mapX - rayPos.x + (1 - stepX) / 2) / rayDir.x );
-			else
-				ZBuffer[x].perpDist = fabs( (mapY - rayPos.y + (1 - stepY) / 2) / rayDir.y );
-
-			//Calculate height of line to draw on screen
-			int lineHeight = abs( int( h / ZBuffer[x].perpDist ) );
-			
-			//choose a texture
-			Texture* tex = nullptr;
-			switch( worldMap[mapX][mapY] )
-			{
-			case 1:  tex = &wall1; break;
-			case 2:  tex = &wall2; break;
-			case 3:  tex = &wall3; break;
-			case 4:  tex = &wall4; break;
-			case 5:  tex = &lights; break;
-			default: tex = &wall1; break;
-			}
-
-			//calculate value of wallX in range 0.0 - 1.0
-			float wallX; //where exactly the wall was hit
-			if( side == 1 )
-				wallX = rayPos.x + ((mapY - rayPos.y + (1 - stepY) / 2) / rayDir.y) * rayDir.x;
-			else
-				wallX = rayPos.y + ((mapX - rayPos.x + (1 - stepX) / 2) / rayDir.x) * rayDir.y;
-
-			wallX -= floor( (wallX) );
-
-			tex->RenderStrip(x, -lineHeight / 2 + h / 2, lineHeight / 2 + h / 2, wallX);
-			
-			//calculate lowest and highest pixel to fill in current stripe
-			ZBuffer[x].top = -lineHeight / 2 + h / 2;
-			ZBuffer[x].bottom = lineHeight / 2 + h / 2;
-		}
-		*/
-
+		
 		/*// Render The Sprites
 		{
 			// sort the sprites so the are drawn from back to front
@@ -312,31 +180,27 @@ int main(int argc, char* argv[])
 		}*/
 		
 	    //timing for input and FPS counter
-		oldTime = time;
-		time = getTicks();
-		double frameTime = (time - oldTime) / 1000.0; //frameTime is the time this frame has taken, in seconds
-		//redraw();
-		//cls();
-
-        // draw ground and sky
-        //drawRect(0,   0, w, h/2, RGB_Black);
-        //drawRect(0, h/2, w, h  , RGB_Gray);
+		//oldTime = time;
+		//time =  SDL_GetTicks();
+		//float deltaTime = (time - oldTime) / 1000.0f; //frameTime is the time this frame has taken, in seconds
 
 		//speed modifiers
-		float moveSpeed = (float)frameTime * 5.0f; //the constant value is in squares/second
-		float rotSpeed = (float)frameTime * 90.0f; //the constant value is in degrees/second
-		if( input.XMotion( ) > 0 ) rotSpeed *= input.XMotion( ) *  0.2f;
-		else if( input.XMotion( ) < 0 ) rotSpeed *= input.XMotion( ) * -0.2f;
+		//float moveSpeed = (float)frameTime * 5.0f; //the constant value is in squares/second
+		//float rotSpeed = (float)frameTime * 90.0f; //the constant value is in degrees/second
+		//if( input.XMotion( ) > 0 ) rotSpeed *= input.XMotion( ) *  0.2f;
+		//else if( input.XMotion( ) < 0 ) rotSpeed *= input.XMotion( ) * -0.2f;
 		
+		/*
 		int mouseX, mouseY;
 		bool mouseL, mouseR;
 		getMouseState(mouseX, mouseY, mouseL, mouseR);
-		/*
 		if (mouseL)
 		{
 			sprites[0]->SetPos( pos + dir * 1.5f);
 		}*/
 
+		/*
+		// TODO: put this into player update
 		//strafe to the right
 		if( input.KeyDown( SDL_SCANCODE_D ) )
 		{
@@ -385,11 +249,11 @@ int main(int argc, char* argv[])
 			SDLNet_UDP_Send( UDP_server, -1, UDP_send_packet );
 			sendPosition = false;
 		}
+		*/
 
 		screen.Display();
 
 	} // END OF GAME LOOP
-
 
 	// clean up
 	for (auto sprite : sprites) {
@@ -397,11 +261,11 @@ int main(int argc, char* argv[])
 	}
 
 	SDLNet_FreePacket(UDP_send_packet);
-	SDLNet_Quit( );
+	SDLNet_Quit();
 
 	screen.~Screen();
 
-	SDL_Quit( );
+	SDL_Quit();
 
 	return 0;
 }

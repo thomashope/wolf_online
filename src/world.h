@@ -18,7 +18,7 @@ public:
 
 	void Render(const Player& player);
 
-	inline char GetGrid( int x, int y ) { return map_[y * height_ + x]; }
+	inline char GetGrid( int x, int y ) const { return map_[y * height_ + x]; }
 
 private:
 

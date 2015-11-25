@@ -3,14 +3,23 @@
 
 #include "vec2.h"
 
+// Foward Declarations
+class World;
+class Input;
+
 class Player {
 public:
-	Player() :pos( 2.0f, 2.0f ), dir( -1.0f, 0.0f ), plane( 0.0f, 0.66f ) {}
+	Player();
 	~Player() {}
 
-	Vec2 pos;		//x and y start position
-	Vec2 dir;		//initial direction vector
-	Vec2 plane;		//the 2d raycaster version of camera plane
+	void Update( const World& world, const Input& input, float deltaTime );
+
+	Vec2 pos;		// x and y start position
+	Vec2 dir;		// initial direction vector
+	Vec2 plane;		// the 2d raycaster version of a camera plane
+
+	float moveSpeed_;
+	float rotSpeed_;
 };
 
 #endif
