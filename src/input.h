@@ -23,12 +23,15 @@ private:
 	void HandleMouseEvent( const SDL_Event& mouseEvent );
 
 	const Uint8* keyboard_;
+
+	// only stores info for keys we want to detect 'presses' for
 	struct OldKeyboard {
 		OldKeyboard( ) :ctrl( false ){}
 		bool ctrl;
 	} oldKeyboard_;
 
-	void StoreOldKeyboard();
+	// save the current state of keys in the old keyboard
+	void StoreKeyboard( );
 
 	struct Mouse {
 		Mouse( int x, int y, SDL_bool l ) :xMotion( x ), yMotion( y ), locked( l ){}

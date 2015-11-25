@@ -36,10 +36,14 @@ World::~World()
 
 void World::SetMap( char* map, int width, int height )
 {
+	// exit immidiately if no data was passed
+	if( map == nullptr ) return;
+
+	// store the width and height
 	width_ = width;
 	height_ = height;
 
-	// ensue the vector has enough space for the map
+	// ensure the vector has enough space for the map
 	map_.resize( width_ * height_, 0 );
 
 	// fill the map from the ptr
@@ -51,7 +55,6 @@ void World::SetMap( char* map, int width, int height )
 
 void World::Render(const Player& player)
 {
-	//
 	// This is a port of the raycaster Lode into SDL2, significantly modified
 	// http://lodev.org/cgtutor/raycasting.html
 	//

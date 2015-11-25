@@ -18,7 +18,7 @@ depthBuffer_(nullptr )
 	// check for errors
 	if( window_ == NULL )
 	{
-		std::cout << "Window error: " << SDL_GetError( ) << std::endl;
+		std::cout << "Window error: " << SDL_GetError() << std::endl;
 		SDL_Quit();
 		std::exit( 1 );
 	}
@@ -61,7 +61,7 @@ void Screen::Display()
 	SDL_RenderClear( renderer_ );
 
 	// draw sky
-	SDL_SetRenderDrawColor( renderer_, 100, 100, 200, 255 );
+	SDL_SetRenderDrawColor( renderer_, 0, 150, 205, 255 );
 	SDL_Rect sky = { 0, 0, width_, height_/2 };
 	SDL_RenderFillRect( renderer_, &sky );
 

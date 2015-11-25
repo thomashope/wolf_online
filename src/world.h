@@ -8,17 +8,18 @@
 #include "screen.h"
 #include "player.h"
 #include "texture.h"
+#include "TCPConnection.h"
 
 class World {
 public:
 	World(Screen* screen);
 	~World();
 
-	void SetMap( char* map, int width, int height );
-
 	void Render(const Player& player);
 
 	inline char GetGrid( int x, int y ) const { return map_[y * height_ + x]; }
+
+	void SetMap( char* map, int width, int height );
 
 private:
 
