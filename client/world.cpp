@@ -15,12 +15,14 @@ screen_( screen )
 		std::cerr << "Error getting resource path: " << SDL_GetError() << std::endl;
 	}
 
+	std::string resPath( "../../resources/" );
+
 	// Load the textures
-	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + "../img/wall_1.bmp" ) );
-	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + "../img/wall_2.bmp" ) );
-	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + "../img/wall_3.bmp" ) );
-	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + "../img/wall_4.bmp" ) );
-	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + "../img/lights_1.bmp" ) );
+	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "wall_1.bmp" ) );
+	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "wall_2.bmp" ) );
+	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "wall_3.bmp" ) );
+	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "wall_4.bmp" ) );
+	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "lights_1.bmp" ) );
 
 }
 

@@ -1,5 +1,3 @@
-
-
 #include <iostream>
 #include <algorithm>
 #include <SDL2/SDL_net.h>

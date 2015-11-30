@@ -1,9 +1,9 @@
 #include "TCPConnection.h"
 #include "world.h"
-#include "packets/JoinRequestPacket.h"
-#include "packets/JoinResponsePacket.h"
-#include "packets/MapRequestPacket.h"
-#include "packets/MapResponsePacket.h"
+#include "../shared/JoinRequestPacket.h"
+#include "../shared/JoinResponsePacket.h"
+#include "../shared/MapRequestPacket.h"
+#include "../shared/MapResponsePacket.h"
 #include "player.h"
 
 TCPConnection::TCPConnection()

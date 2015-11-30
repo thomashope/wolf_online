@@ -4,9 +4,9 @@
 #include <SDL2/SDL_net.h>
 #undef main
 
-#include "../../wolf_online_client/src/packets/UniversalPacket.h"
-#include "../../wolf_online_client/src/packets/JoinResponsePacket.h"
-#include "../../wolf_online_client/src/packets/MapResponsePacket.h"
+#include "../shared/UniversalPacket.h"
+#include "../shared/JoinResponsePacket.h"
+#include "../shared/MapResponsePacket.h"
 
 #define SERVERIP "127.0.0.1"
 #define SERVERPORT 1177
