@@ -51,7 +51,7 @@ bool TCPConnection::Connect(Player& player, std::string host, Uint16 port)
 	if( response.GetResponse() == JR_REJECT )
 	{
 		// exit if rejected
-		std::cout << "You connection was rejected by the server" << std::endl;
+		std::cout << "Your connection was rejected by the server" << std::endl;
 		return false;
 	}
 

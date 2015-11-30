@@ -12,6 +12,7 @@ enum PacketType : Uint8 {
 	PT_JOIN_RESPONSE = 2,
 	PT_MAP_REQUEST = 3,
 	PT_MAP_RESPONSE = 4,
+	PT_MOVE = 5,
 	PT_UNKNOWN = 0xff
 };
 

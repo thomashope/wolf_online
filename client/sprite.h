@@ -1,7 +1,7 @@
 #ifndef SPRITE_H
 #define SPRITE_H
 
-#include "vec2.h"
+#include "../shared/vec2.h"
 #include "texture.h"
 
 // Put this in a screen class?

@@ -2,7 +2,7 @@
 #define PLAYER_H
 
 #include <SDL2\SDL.h>
-#include "vec2.h"
+#include "../shared/vec2.h"
 
 // Foward Declarations
 class World;

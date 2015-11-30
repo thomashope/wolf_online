@@ -1,15 +1,19 @@
 #include <iostream>
 #include <iomanip>
+#include <vector>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
-#undef main
+#undef main // removes SDLs evil define
 
 #include "../shared/UniversalPacket.h"
+#include "../shared/JoinRequestPacket.h"
 #include "../shared/JoinResponsePacket.h"
 #include "../shared/MapResponsePacket.h"
 
 #define SERVERIP "127.0.0.1"
 #define SERVERPORT 1177
+#define MAX_CLIENTS 2
 
 #define MAP_WIDTH 24
 #define MAP_HEGIHT 24
@@ -40,6 +44,16 @@ char mapData[MAP_WIDTH * MAP_HEGIHT] =
 	1, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
+
+struct Client {
+	TCPsocket tcp_sock;
+	UDPsocket udp_sock;
+	int ID;
+};
+
+std::vector<Client> clients;
+
+void check_for_new_tcp( TCPsocket server_sock );
 
 int main(int argc, char* argv[])
 {
@@ -74,9 +88,9 @@ int main(int argc, char* argv[])
 		exit( EXIT_FAILURE );
 	}
 
-	// create a listening TCP socket on port 5555 (server)
+	// create a listening TCP socket for the server
 	IPaddress address;
-	TCPsocket TCP_client_sock = NULL;
+	//TCPsocket TCP_client_sock = NULL;
 	TCPsocket TCP_server_sock;
 
 	if( SDLNet_ResolveHost( &address, NULL, SERVERPORT ) == -1 ) {
@@ -118,26 +132,32 @@ int main(int argc, char* argv[])
 
 			/* Quit if packet contains "quit" */
 			if( strcmp( (char *)UDP_received_packet->data, "quit" ) == 0 )
-				quit = 1;
+				quit = true;
 		}
+
+		check_for_new_tcp( TCP_server_sock );
 
 		// try to accept a connection if not already accepted
-		if( TCP_client_sock == NULL )
-		{
-			TCP_client_sock = SDLNet_TCP_Accept( TCP_server_sock );
-		}
-		// if a connection has been made, check it
-		if( TCP_client_sock )
-		{
-			std::cout << "checking TCP" << std::endl;
-			//Uint8* buffer = new Uint8[64];
-			UniversalPacket packet;
+		//if( TCP_client_sock == NULL )
+		//{
+		//	TCP_client_sock = SDLNet_TCP_Accept( TCP_server_sock );
+		//}
 
-			if( SDLNet_TCP_Recv( TCP_client_sock, packet.Data(), packet.Size() ) <= 0 )
+		// if a connection has been made, check it
+		//if( TCP_client_sock )
+		for( Client& client : clients )
+		{
+			if( client.tcp_sock == NULL ) continue;
+
+			std::cout << "checking TCP" << std::endl;			
+			UniversalPacket packet;
+			
+			if( SDLNet_TCP_Recv( client.tcp_sock, packet.Data( ), packet.Size( ) ) <= 0 )
 			{
 				// an error occured, set the socket to null and try connecting again
 				// TODO: find out if this leaves allocated memory?
-				TCP_client_sock = NULL;
+				// TODO: remove the client from the array
+				client.tcp_sock = NULL;
 				continue;
 			}
 
@@ -146,16 +166,16 @@ int main(int argc, char* argv[])
 			// check if its a join request
 			if (recvd)
 			{
-				if (recvd->Type() == PT_JOIN_REQUEST)
-				{
-					std::cout << "player requested join" << std::endl;
-
-					JoinResponsePacket response;
-					response.SetResponse(JR_OK);
-					response.SetGivenID(117);
-
-					SDLNet_TCP_Send(TCP_client_sock, response.Data(), response.Size());
-				}
+				//if (recvd->Type() == PT_JOIN_REQUEST)
+				//{
+				//	std::cout << "player requested join" << std::endl;
+				//
+				//	JoinResponsePacket response;
+				//	response.SetResponse(JR_OK);
+				//	response.SetGivenID(117);
+				//
+				//	SDLNet_TCP_Send( client.tcp_sock, response.Data( ), response.Size( ) );
+				//}
 				if (recvd->Type() == PT_MAP_REQUEST)
 				{
 					std::cout << "player asked for map data" << std::endl;
@@ -163,7 +183,7 @@ int main(int argc, char* argv[])
 					MapResponsePacket response;
 					response.SetMapData(mapData);
 
-					SDLNet_TCP_Send(TCP_client_sock, response.Data(), response.Size());
+					SDLNet_TCP_Send( client.tcp_sock, response.Data( ), response.Size( ) );
 				}
 			}
 		}
@@ -174,4 +194,65 @@ int main(int argc, char* argv[])
 	SDLNet_Quit( );
 	SDL_Quit( );
 	return 0;
+}
+
+void check_for_new_tcp(TCPsocket server_sock)
+{
+	TCPsocket new_socket;
+
+	// try to accept a new connection
+	new_socket = SDLNet_TCP_Accept(server_sock);
+
+	// if there was no connection accept returns null
+	if (new_socket)
+	{
+		JoinRequestPacket joinRequest;
+
+		// check for a join request
+		if (SDLNet_TCP_Recv(new_socket, joinRequest.Data(), joinRequest.Size()) <= 0)
+		{
+			// an error occured, set the socket to null and try connecting again
+			// TODO: find out if this leaves allocated memory?
+			return;
+		}
+
+		// if there is space on the server
+		if (clients.size() < MAX_CLIENTS)
+		{
+			// respon with OK
+			JoinResponsePacket response;
+			response.SetResponse(JR_OK);
+
+			// TODO: make ID allocation not broken
+			response.SetGivenID( clients.size() );
+
+			if( SDLNet_TCP_Send( new_socket, response.Data(), response.Size() ) < response.Size() )
+			{
+				// the whole packet could not be sent, some error occured
+				return;
+			}
+
+			// add the new client to the vector
+			clients.push_back(Client());
+
+			// find an avalible id and reply ok
+			clients.back().ID = response.GetGivenID();
+
+			// remember the socket
+			clients.back().tcp_sock = new_socket;
+		}
+		else
+		{
+			// else reply reject
+			JoinResponsePacket response;
+			response.SetResponse( JR_REJECT );
+
+			if( SDLNet_TCP_Send( 
+				new_socket, response.Data(), response.Size() ) < response.Size() )
+			{
+				// the whole packet could not be sent, some error occured
+				return;
+			}
+		}
+	}
 }

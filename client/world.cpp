@@ -23,7 +23,6 @@ screen_( screen )
 	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "wall_3.bmp" ) );
 	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "wall_4.bmp" ) );
 	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "lights_1.bmp" ) );
-
 }
 
 World::~World()
@@ -57,7 +56,7 @@ void World::SetMap( char* map, int width, int height )
 
 void World::Render(const Player& player)
 {
-	// This is a port of the raycaster Lode into SDL2, significantly modified
+	// This is a port of the raycaster by Lode into SDL2, significantly modified
 	// http://lodev.org/cgtutor/raycasting.html
 	//
 	// Copyright (c) 2004-2007, Lode Vandevenne
