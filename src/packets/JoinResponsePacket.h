@@ -1,7 +1,9 @@
-#ifndef JOIN_RESPONSE_PACKET
-#define JOIN_RESPONSE_PACKET
+#ifndef JOIN_RESPONSE_PACKET_H
+#define JOIN_RESPONSE_PACKET_H
 
 #include "BasePacket.h"
+
+#define JOINRESPONSE_PACKET_SIZE 3
 
 enum JoinResponse {
 	JR_OK = 0,
@@ -14,10 +16,12 @@ enum JoinResponse {
 
 class JoinResponsePacket : public BasePacket {
 public:
-	JoinResponsePacket() :BasePacket( 3 ) {
-		data_[0] = PT_JOIN_RESPONSE;
+	JoinResponsePacket() : BasePacket(PT_JOIN_RESPONSE, JOINRESPONSE_PACKET_SIZE)
+	{
 	}
-	~JoinResponsePacket() {}
+	~JoinResponsePacket()
+	{
+	}
 
 	void SetResponse( JoinResponse jr ) { data_[1] = jr; }
 	void SetGivenID( Uint8 ID ) { data_[2] = ID; }

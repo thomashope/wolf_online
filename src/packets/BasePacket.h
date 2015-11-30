@@ -2,47 +2,53 @@
 #define BASEPACKET_H
 
 #include <iostream>
+#include <memory>
 #include <SDL2/SDL.h>
 
 // First byte of a packet should always be the type
-enum PacketType {
+enum PacketType : Uint8 {
 	PT_HEARTBEAT = 0,
 	PT_JOIN_REQUEST = 1,
 	PT_JOIN_RESPONSE = 2,
 	PT_MAP_REQUEST = 3,
-	PT_MAP_RESPONSE = 4
+	PT_MAP_RESPONSE = 4,
+	PT_UNKNOWN = 0xff
 };
 
 class BasePacket
 {
 protected:
-	BasePacket( int size ) :data_( nullptr ), size_( size )
+	BasePacket( PacketType type, unsigned int size ) :
+		size_((size > 1) ? size : 1)	// enforce size as always greater than 1
 	{
-		// allocates size bytes for packet data
-		// initalise array to zero thanks to []();
-		data_ = new Uint8[size_]();
-	};
+		data_ = std::unique_ptr<Uint8[]>(new Uint8[size_]());	// allocates size bytes for packet data
+																// initalise array to zero thanks to []();
 
-	virtual ~BasePacket()
-	{
-		if( data_ ) {
-			delete[] data_;
-			data_ = nullptr;
-		}
-	};
+		// set the first byte of the packet to the type 
+		data_[0] = type;
+	}
 
 	// The contents of the packet
-	Uint8* data_;
+	// first byte is type
+	// additional bytes are defined in the sub class
+	std::unique_ptr<Uint8[]> data_;
 
 	// the number of bytes of data in the packet
-	int size_;
+	unsigned int size_;
 
 public:
+	virtual ~BasePacket() {}
+
 	// returns the contents of the packet ready for sending
-	virtual Uint8* Data() final { return data_; }
+	virtual Uint8* Data() const final { return data_.get(); }
 
 	// return the number of bytes of data in the packet
-	virtual int Size() final { return size_; }
+	virtual unsigned int Size() const final { return size_; }
+
+	// returns the type of the packet
+	// packet types cannoct be changed after construction ...
+	// ... but could be PT_UNKNOWN
+	virtual PacketType Type() const final { return (PacketType)data_[0]; }
 };
 
 // Helper functions for packing
@@ -51,25 +57,11 @@ public:
 // Assumes sizeof(float) == 4 !!!!
 // Assumes the recipient and host use the same type of float !!!!
 // http://stackoverflow.com/questions/20762952/most-efficient-standard-compliant-way-of-reinterpreting-int-as-float
-Uint32 floatToUint32( float f )
-{
-	Uint32 i = 0;
-	char* iPtr = (char*)&i;
-	char* fPtr = (char*)&f;
-	memcpy( iPtr, fPtr, 4 );
-	return i;
-}
+Uint32 floatToUint32(float f);
 
 // reinterperates the bits of a Uint32 as a float
 // Assumes sizeof(float) == 4 !!!!
 // Assumes the recipient and host use the same type of float !!!!
-float Uint32toFloat( Uint32 i )
-{
-	float f = 0;
-	char* fPtr = (char*)&f;
-	char* iPtr = (char*)&i;
-	memcpy( fPtr, iPtr, 4 );
-	return f;
-}
+float Uint32toFloat(Uint32 i);
 
 #endif

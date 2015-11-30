@@ -3,19 +3,21 @@
 
 #include "BasePacket.h"
 
+#define JOINREQUEST_PACKET_SIZE 6
+
 class JoinRequestPacket : public BasePacket
 {
 public:
-	JoinRequestPacket() :BasePacket( 6 ) {
-		data_[0] = PT_JOIN_REQUEST;
+	JoinRequestPacket() :BasePacket(PT_JOIN_REQUEST, JOINREQUEST_PACKET_SIZE)
+	{
 		data_[1] = 'H';
 		data_[2] = 'E';
 		data_[3] = 'L';
 		data_[4] = 'L';
 		data_[5] = 'O';
 	}
-	~JoinRequestPacket( ) {
-	}
+
+	~JoinRequestPacket() {}
 };
 
 #endif

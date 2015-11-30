@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
 	{
 		quit("failed to make TCP connection");
 	}
+
 	
 	Uint32 time = 0;			//time of current frame
 	Uint32 oldTime = 0;			//time of previous frame
@@ -116,7 +117,8 @@ int main(int argc, char* argv[])
 	//bool sendPosition = false;	//
 
 	World world(&screen);
-	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
+	//world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
+	TCP_conection.RequestMapData(world);
 
 	//std::vector<Sprite*> sprites;
 	//sprites.push_back(new Sprite(16, 16));
@@ -132,7 +134,7 @@ int main(int argc, char* argv[])
 	{
 		oldTime = time;
 		time =  SDL_GetTicks();
-		float deltaTime = (time - oldTime) / 1000.0f; //frameTime is the time this frame has taken, in seconds
+		float deltaTime = (time - oldTime) / 1000.0f;
 		
 		input.PorcessEvents();
 

@@ -18,9 +18,6 @@ public:
 	// returns true if the server sent the map successfully, or false if there was an error
 	bool RequestMapData( World& world );
 
-	// Released any memory allocated to store the map from the server
-	void FreeMapData();
-
 private:
 	IPaddress address_;
 	TCPsocket socket_;
@@ -28,8 +25,6 @@ private:
 	// data received is stored in the buffer
 	Uint8* buffer_;
 	const int MAX_BUFFER{ 256 };
-
-	char* mapData_;
 };
 
 #endif

@@ -1,11 +1,12 @@
 #include "TCPConnection.h"
 #include "world.h"
-#include "packets/JoinRequest.h"
-#include "packets/JoinResponse.h"
+#include "packets/JoinRequestPacket.h"
+#include "packets/JoinResponsePacket.h"
+#include "packets/MapRequestPacket.h"
+#include "packets/MapResponsePacket.h"
 #include "player.h"
 
-TCPConnection::TCPConnection() :
-mapData_( nullptr )
+TCPConnection::TCPConnection()
 {
 	// allocate the buffer
 	buffer_ = new Uint8[MAX_BUFFER];
@@ -13,11 +14,6 @@ mapData_( nullptr )
 
 TCPConnection::~TCPConnection()
 {
-	if( mapData_ )
-	{
-		FreeMapData();
-	}
-
 	// free the buffer
 	delete[] buffer_;
 	buffer_ = nullptr;
@@ -49,6 +45,7 @@ bool TCPConnection::Connect(Player& player, std::string host, Uint16 port)
 	SDLNet_TCP_Send( socket_, request.Data(), request.Size() );
 
 	// read the response
+	//TODO: check return value for errors
 	SDLNet_TCP_Recv( socket_, response.Data(), response.Size() );
 
 	if( response.GetResponse() == JR_REJECT )
@@ -67,26 +64,23 @@ bool TCPConnection::Connect(Player& player, std::string host, Uint16 port)
 
 bool TCPConnection::RequestMapData(World& world)
 {
-	int width = 0;
-	int height = 0;
+	MapRequestPacket request;
+	MapResponsePacket response;
 
-	// request the data
+	std::cout << "requsting map data" << std::endl;
 
-	// recv the map info
+	// ask the server for the map data
+	SDLNet_TCP_Send(socket_, request.Data(), request.Size());
 
-	// recv the map data
-
-	world.SetMap( mapData_, width, height );
-
-	FreeMapData();
-	return true;
-}
-
-void TCPConnection::FreeMapData()
-{
-	if( mapData_ )
+	// recv the whole map ( this blocks untill all the data is received )
+	if (SDLNet_TCP_Recv(socket_, response.Data(), response.Size()) < response.Size())
 	{
-		delete[] mapData_;
-		mapData_ = nullptr;
+		std::cout << "error recving map data" << std::endl;
+		return false;
 	}
+	
+	// construct the world
+	world.SetMap( response.GetMapData(), response.Width(), response.Height() );
+
+	return true;
 }
