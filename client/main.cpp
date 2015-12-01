@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <queue>
 #include <SDL2/SDL_net.h>
 
 #include "InstantCG.h"
@@ -7,6 +8,9 @@
 #include "input.h"
 #include "world.h"
 #include "TCPConnection.h"
+#include "UDPconnection.h"
+#include "../shared/BasePacket.h"
+#include "../shared/MovePacket.h"
 using namespace InstantCG;
 
 #define SCREEN_WIDTH 640
@@ -17,9 +21,12 @@ using namespace InstantCG;
 #define SERVERIP "127.0.0.1"
 #define SERVERPORT 1177
 
-TCPConnection TCP_conection;
+TCPConnection TCP_connection;
+UDPConnection UDP_connection;
 
-Player player;				// stores player data
+Player player;
+
+std::queue<BasePacket*> packet_queue;
 
 char mapData[MAP_WIDTH * MAP_HEGIHT] =
 {
@@ -52,6 +59,7 @@ char mapData[MAP_WIDTH * MAP_HEGIHT] =
 void init(); // initalises libraries
 void quit(std::string message = "");	// quits libraries and exits the program
 										// pass a string to show an error on exit
+void tcp_send_packets( TCPsocket server );
 
 int main(int argc, char* argv[])
 {	
@@ -78,6 +86,7 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
 		exit(EXIT_FAILURE);
 	}
+	//*
 	// Allocate memory for the packet
 	if( !(UDP_send_packet = SDLNet_AllocPacket(128)) )
 	{
@@ -99,7 +108,7 @@ int main(int argc, char* argv[])
 	SDLNet_UDP_Send(UDP_server, -1, UDP_send_packet);
 	*/
 
-	if( !TCP_conection.Connect( player, SERVERIP, SERVERPORT ) )
+	if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
 	{
 		quit("failed to make TCP connection");
 	}
@@ -116,7 +125,16 @@ int main(int argc, char* argv[])
 
 	World world(&screen);
 	//world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
-	TCP_conection.RequestMapData(world);
+	TCP_connection.RequestMapData( world );
+
+	TCP_connection.StartSenderThread( );
+
+	UDP_connection.Connect( SERVERIP, SERVERPORT );
+
+	MovePacket sendMe;
+	sendMe.SetPosition( Vec2(12.3f, 10.1f) );
+
+	UDP_connection.SendPacket( &sendMe );
 
 	//std::vector<Sprite*> sprites;
 	//sprites.push_back(new Sprite(16, 16));
@@ -134,12 +152,26 @@ int main(int argc, char* argv[])
 		time =  SDL_GetTicks();
 		float deltaTime = (time - oldTime) / 1000.0f;
 		
+		Vec2 oldpos = player.pos;
+
 		input.PorcessEvents();
 
 		player.Update( world, input, deltaTime );
 
 		world.Render( player );
-		
+
+		Vec2 newpos = player.pos;
+
+		if( oldpos.x != newpos.x )
+		{
+			MovePacket* movpac = new MovePacket();
+			movpac->SetPosition( newpos );
+
+			TCP_connection.QueuePacket( movpac );
+		}
+
+		//tcp_send_packets( TCP_conection.GetSocket() );
+
 		/* // Render The Sprites
 		{
 			// sort the sprites so the are drawn from back to front
@@ -219,4 +251,17 @@ void quit(std::string message)
 	SDL_Quit();
 
 	exit( 0 );
+}
+
+void tcp_send_packets(TCPsocket server)
+{
+	while( !packet_queue.empty() )
+	{
+		// send the front packet
+		SDLNet_TCP_Send( server, packet_queue.front()->Data(), packet_queue.front()->Size() );
+		
+		// remove the packet form the queue
+		delete packet_queue.front();
+		packet_queue.pop();
+	}
 }

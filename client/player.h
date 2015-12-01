@@ -7,6 +7,7 @@
 // Foward Declarations
 class World;
 class Input;
+class BasePacket;
 
 class Player {
 public:
@@ -14,6 +15,13 @@ public:
 	~Player() {}
 
 	void Update( const World& world, const Input& input, float deltaTime );
+
+	// true if the player has moved enough that it's worth telling the server
+	bool SignificantMove();
+	
+	// creates a packet with the players current data
+	// TODO: use unique_ptr instead of raw ptr
+	BasePacket* GetMovePacket();
 
 	Vec2 pos;		// x and y start position
 	Vec2 dir;		// initial direction vector
@@ -24,7 +32,6 @@ public:
 private:
 	float moveSpeed_;
 	float rotSpeed_;
-
 };
 
 #endif

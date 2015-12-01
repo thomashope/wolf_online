@@ -4,6 +4,7 @@
 #include "JoinResponsePacket.h"
 #include "MapRequestPacket.h"
 #include "MapResponsePacket.h"
+#include "MovePacket.h"
 
 std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 {
@@ -15,13 +16,15 @@ std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 		//TODO
 		break;
 	case PT_JOIN_REQUEST:
-		return ConstructPacket(new JoinRequestPacket);
+		return ConstructPacket( new JoinRequestPacket );
 	case PT_JOIN_RESPONSE:
-		return ConstructPacket(new JoinResponsePacket);
+		return ConstructPacket( new JoinResponsePacket );
 	case PT_MAP_REQUEST:
-		return ConstructPacket(new MapRequestPacket);
+		return ConstructPacket( new MapRequestPacket );
 	case PT_MAP_RESPONSE:
-		return ConstructPacket(new MapResponsePacket);
+		return ConstructPacket( new MapResponsePacket );
+	case PT_MOVE:
+		return ConstructPacket( new MovePacket );
 	default:
 		break;
 	}

@@ -10,6 +10,7 @@
 #include "../shared/JoinRequestPacket.h"
 #include "../shared/JoinResponsePacket.h"
 #include "../shared/MapResponsePacket.h"
+#include "../shared/MovePacket.h"
 
 #define SERVERIP "127.0.0.1"
 #define SERVERPORT 1177
@@ -53,6 +54,8 @@ struct Client {
 
 std::vector<Client> clients;
 
+UniversalPacket uniPacket;
+
 void check_for_new_tcp( TCPsocket server_sock );
 
 int main(int argc, char* argv[])
@@ -72,7 +75,7 @@ int main(int argc, char* argv[])
 	}
 		
 	UDPsocket UDP_server_socket;
-	UDPpacket* UDP_received_packet;
+	UDPpacket UDP_received_packet;
 	
 	/* Open a socket */
 	if( !(UDP_server_socket = SDLNet_UDP_Open( SERVERPORT )) )
@@ -82,11 +85,14 @@ int main(int argc, char* argv[])
 	}
 	std::cout << "Server listening on port: " << SERVERPORT << std::endl;
 	/* Allocate memory for the packet */
-	if( !(UDP_received_packet = SDLNet_AllocPacket( 128 )) )
-	{
-		fprintf( stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError() );
-		exit( EXIT_FAILURE );
-	}
+	//if( !(UDP_received_packet = SDLNet_AllocPacket( 128 )) )
+	//{
+	//	fprintf( stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError() );
+	//	exit( EXIT_FAILURE );
+	//}
+	// overlap the received data into the universal packet
+	UDP_received_packet.data = uniPacket.Data();
+	UDP_received_packet.maxlen = uniPacket.Size();
 
 	// create a listening TCP socket for the server
 	IPaddress address;
@@ -108,7 +114,8 @@ int main(int argc, char* argv[])
 	while( !quit )
 	{
 		/* Wait a packet. UDP_Recv returns != 0 if a packet is coming */
-		if( SDLNet_UDP_Recv( UDP_server_socket, UDP_received_packet ) )
+		SDLNet_UDP_Recv( UDP_server_socket, &UDP_received_packet );
+		//if( SDLNet_UDP_Recv( UDP_server_socket, &UDP_received_packet ) )
 		{
 			/* print packet info
 			std::cout << "UDP Packet incoming\n" << std::endl;
@@ -119,20 +126,34 @@ int main(int argc, char* argv[])
 			std::cout << "\tAddress: " << std::hex
 				<< UDP_received_packet->address.host << " " << std::dec
 				<< UDP_received_packet->address.port << std::endl;
-			//*/
-						 
+			//						 
 			float fff = Uint32toFloat( SDLNet_Read32( &UDP_received_packet->data[2] ) );
-
 			// print packet data
 			std::cout << "\n\tPacket Type: " << (int)UDP_received_packet->data[0]
 				<< "\n\tOwnerID: " << (int)UDP_received_packet->data[1]
 				<< "\n\tX position: " << Uint32toFloat( SDLNet_Read32( &UDP_received_packet->data[2] ) )
 				<< "\n\tY position: " << Uint32toFloat( SDLNet_Read32( &UDP_received_packet->data[6] ) )
 				<< std::endl;
+			//*/
+			auto recvd = uniPacket.CreateFromContents();
 
-			/* Quit if packet contains "quit" */
-			if( strcmp( (char *)UDP_received_packet->data, "quit" ) == 0 )
-				quit = true;
+			if( recvd )
+			{
+				if( recvd->Type( ) == PT_MOVE )
+				{
+					MovePacket* packet = (MovePacket*)recvd.get( );
+
+					std::cout << "x: " << packet->GetPosition( ).x << " y: " << packet->GetPosition( ).y << std::endl;
+				}
+				else
+				{
+					std::cout << "UDP type not recognised" << std::endl;
+				}
+			}
+			else
+			{
+				//std::cout << "UDP packet not supported" << std::endl;
+			}
 		}
 
 		check_for_new_tcp( TCP_server_sock );
@@ -148,11 +169,8 @@ int main(int argc, char* argv[])
 		for( Client& client : clients )
 		{
 			if( client.tcp_sock == NULL ) continue;
-
-			std::cout << "checking TCP" << std::endl;			
-			UniversalPacket packet;
-			
-			if( SDLNet_TCP_Recv( client.tcp_sock, packet.Data( ), packet.Size( ) ) <= 0 )
+						
+			if( SDLNet_TCP_Recv( client.tcp_sock, uniPacket.Data(), uniPacket.Size() ) <= 0 )
 			{
 				// an error occured, set the socket to null and try connecting again
 				// TODO: find out if this leaves allocated memory?
@@ -161,7 +179,7 @@ int main(int argc, char* argv[])
 				continue;
 			}
 
-			auto recvd = packet.CreateFromContents();
+			auto recvd = uniPacket.CreateFromContents();
 
 			// check if its a join request
 			if (recvd)
@@ -185,12 +203,26 @@ int main(int argc, char* argv[])
 
 					SDLNet_TCP_Send( client.tcp_sock, response.Data( ), response.Size( ) );
 				}
+				else if( recvd->Type() == PT_MOVE )
+				{
+					MovePacket* packet = (MovePacket*)recvd.get();
+
+					std::cout << "x: " << packet->GetPosition().x << " y: " << packet->GetPosition().y << std::endl;
+				}
+				else
+				{
+					std::cout << "type not recognised" << std::endl;
+				}
+			}
+			else
+			{
+				std::cout << "packet not supported" << std::endl;
 			}
 		}
 	}
 
 	// cleanup
-	SDLNet_FreePacket( UDP_received_packet );
+	//SDLNet_FreePacket( UDP_received_packet );
 	SDLNet_Quit( );
 	SDL_Quit( );
 	return 0;

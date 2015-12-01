@@ -1,25 +1,33 @@
 #include "TCPConnection.h"
 #include "world.h"
+#include "player.h"
 #include "../shared/JoinRequestPacket.h"
 #include "../shared/JoinResponsePacket.h"
 #include "../shared/MapRequestPacket.h"
 #include "../shared/MapResponsePacket.h"
-#include "player.h"
 
-TCPConnection::TCPConnection()
+TCPConnection::TCPConnection() :
+sender_thread_( nullptr )
 {
 	// allocate the buffer
 	buffer_ = new Uint8[MAX_BUFFER];
+
+	close_thread_ = false;
 }
 
 TCPConnection::~TCPConnection()
 {
+	// clean up the thread
+	close_thread_ = true;
+	if( sender_thread_ )
+		sender_thread_->join();
+
 	// free the buffer
 	delete[] buffer_;
 	buffer_ = nullptr;
 }
 
-bool TCPConnection::Connect(Player& player, std::string host, Uint16 port)
+bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
 {
 	// Resolve the server name
 	if( SDLNet_ResolveHost( &address_, host.c_str(), port ) )
@@ -62,7 +70,7 @@ bool TCPConnection::Connect(Player& player, std::string host, Uint16 port)
 	return true;
 }
 
-bool TCPConnection::RequestMapData(World& world)
+bool TCPConnection::RequestMapData( World& world )
 {
 	MapRequestPacket request;
 	MapResponsePacket response;
@@ -70,10 +78,10 @@ bool TCPConnection::RequestMapData(World& world)
 	std::cout << "requsting map data" << std::endl;
 
 	// ask the server for the map data
-	SDLNet_TCP_Send(socket_, request.Data(), request.Size());
+	SDLNet_TCP_Send( socket_, request.Data(), request.Size() );
 
 	// recv the whole map ( this blocks untill all the data is received )
-	if (SDLNet_TCP_Recv(socket_, response.Data(), response.Size()) < response.Size())
+	if( SDLNet_TCP_Recv( socket_, response.Data(), response.Size() ) < response.Size() )
 	{
 		std::cout << "error recving map data" << std::endl;
 		return false;
@@ -83,4 +91,42 @@ bool TCPConnection::RequestMapData(World& world)
 	world.SetMap( response.GetMapData(), response.Width(), response.Height() );
 
 	return true;
+}
+
+void TCPConnection::QueuePacket( BasePacket* packet )
+{
+	queue_mtx_.lock();
+
+	packet_queue_.push( packet );
+
+	queue_mtx_.unlock();
+}
+
+void TCPConnection::StartSenderThread()
+{
+	// create a thread if one doesn't already exist
+	if( sender_thread_ == nullptr )
+		sender_thread_ = new std::thread( std::mem_fun( &TCPConnection::SendPackets ), this );
+}
+
+void TCPConnection::SendPackets()
+{
+	while( !close_thread_ )
+	{
+		//TODO: stopy the busy waiting
+
+		if( !packet_queue_.empty( ) )
+		{
+			queue_mtx_.lock();
+
+			// send the front packet
+			SDLNet_TCP_Send( socket_, packet_queue_.front()->Data(), packet_queue_.front()->Size() );
+
+			// remove the packet form the queue
+			delete packet_queue_.front( );
+			packet_queue_.pop();
+
+			queue_mtx_.unlock();
+		}
+	}
 }
