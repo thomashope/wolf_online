@@ -8,6 +8,7 @@
 #include <mutex>
 #include <atomic>
 #include <thread>
+#include <memory>
 
 class World;
 class Player;
@@ -31,16 +32,17 @@ public:
 	void StartSenderThread();
 
 private:
-	IPaddress address_;
-	TCPsocket socket_;
+	IPaddress address_;	// Address of the recipient
+	TCPsocket socket_;	// socket to send over
 
-	// data received is stored in the buffer
+	// TODO: remove this
+	// data received is stored in the bufferr
 	Uint8* buffer_;
 	const int MAX_BUFFER{ 256 };
 
 	std::atomic_bool close_thread_;
 	std::mutex queue_mtx_;
-	std::queue<BasePacket*> packet_queue_;
+	std::queue< std::unique_ptr<BasePacket> > packet_queue_;
 	std::thread* sender_thread_;
 
 	// attach to the sender thread

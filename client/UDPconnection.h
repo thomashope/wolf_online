@@ -2,7 +2,12 @@
 #define UDP_CONNECTION_H
 
 #include <SDL2/SDL_net.h>
+#include <string>
 #include <queue>
+#include <mutex>
+#include <atomic>
+#include <thread>
+#include <memory>
 #include "../shared/UniversalPacket.h"
 
 class BasePacket;
@@ -25,8 +30,12 @@ public:
 private:
 	IPaddress address_;
 	UDPsocket socket_;
-	//UDPpacket SDLpacket_;		// TODO: remove this, keep in implementation
-	UniversalPacket packet_;
+	UniversalPacket packet_;	// Data is received into this packet, TODO: can I remove this?
+
+	std::atomic_bool close_thread_;
+	std::mutex queue_mtx_;
+	std::queue< std::unique_ptr<BasePacket> > packet_queue_;
+	std::thread* sender_thread_;
 
 	// Attach to the sender thread
 	void SendPackets();

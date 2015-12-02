@@ -14,7 +14,7 @@
 
 #define SERVERIP "127.0.0.1"
 #define SERVERPORT 1177
-#define MAX_CLIENTS 2
+#define MAX_CLIENTS 8
 
 #define MAP_WIDTH 24
 #define MAP_HEGIHT 24
@@ -109,41 +109,35 @@ int main(int argc, char* argv[])
 		exit( 5 );
 	}
 
+	//check_for_new_tcp( TCP_server_sock );
+
 	/* Main loop */
 	bool quit = false;
 	while( !quit )
 	{
 		/* Wait a packet. UDP_Recv returns != 0 if a packet is coming */
-		SDLNet_UDP_Recv( UDP_server_socket, &UDP_received_packet );
-		//if( SDLNet_UDP_Recv( UDP_server_socket, &UDP_received_packet ) )
+		//SDLNet_UDP_Recv( UDP_server_socket, &UDP_received_packet );
+		while( SDLNet_UDP_Recv( UDP_server_socket, &UDP_received_packet ) )
 		{
-			/* print packet info
+			/*/ print packet info
 			std::cout << "UDP Packet incoming\n" << std::endl;
-			std::cout << "\tChan:    " << UDP_received_packet->channel << std::endl;
-			std::cout << "\tLen:     " << UDP_received_packet->len << std::endl;
-			std::cout << "\tMaxlen:  " << UDP_received_packet->maxlen << std::endl;
-			std::cout << "\tStatus:  " << UDP_received_packet->status << std::endl;
+			std::cout << "\tChan:    " << UDP_received_packet.channel << std::endl;
+			std::cout << "\tLen:     " << UDP_received_packet.len << std::endl;
+			std::cout << "\tMaxlen:  " << UDP_received_packet.maxlen << std::endl;
+			std::cout << "\tStatus:  " << UDP_received_packet.status << std::endl;
 			std::cout << "\tAddress: " << std::hex
-				<< UDP_received_packet->address.host << " " << std::dec
-				<< UDP_received_packet->address.port << std::endl;
-			//						 
-			float fff = Uint32toFloat( SDLNet_Read32( &UDP_received_packet->data[2] ) );
-			// print packet data
-			std::cout << "\n\tPacket Type: " << (int)UDP_received_packet->data[0]
-				<< "\n\tOwnerID: " << (int)UDP_received_packet->data[1]
-				<< "\n\tX position: " << Uint32toFloat( SDLNet_Read32( &UDP_received_packet->data[2] ) )
-				<< "\n\tY position: " << Uint32toFloat( SDLNet_Read32( &UDP_received_packet->data[6] ) )
-				<< std::endl;
+				<< UDP_received_packet.address.host << " " << std::dec
+				<< UDP_received_packet.address.port << std::endl;
 			//*/
 			auto recvd = uniPacket.CreateFromContents();
 
 			if( recvd )
 			{
-				if( recvd->Type( ) == PT_MOVE )
+				if( recvd->Type() == PT_MOVE )
 				{
-					MovePacket* packet = (MovePacket*)recvd.get( );
+					MovePacket* packet = (MovePacket*)recvd.get();
 
-					std::cout << "x: " << packet->GetPosition( ).x << " y: " << packet->GetPosition( ).y << std::endl;
+					std::cout << "x: " << packet->GetPosition().x << " y: " << packet->GetPosition().y << std::endl;
 				}
 				else
 				{
@@ -156,7 +150,8 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		check_for_new_tcp( TCP_server_sock );
+		//if( clients.size() == 0 )
+		//	check_for_new_tcp( TCP_server_sock );
 
 		// try to accept a connection if not already accepted
 		//if( TCP_client_sock == NULL )
@@ -168,7 +163,8 @@ int main(int argc, char* argv[])
 		//if( TCP_client_sock )
 		for( Client& client : clients )
 		{
-			if( client.tcp_sock == NULL ) continue;
+			if( client.tcp_sock == NULL )
+				continue;
 						
 			if( SDLNet_TCP_Recv( client.tcp_sock, uniPacket.Data(), uniPacket.Size() ) <= 0 )
 			{
@@ -211,12 +207,12 @@ int main(int argc, char* argv[])
 				}
 				else
 				{
-					std::cout << "type not recognised" << std::endl;
+					std::cout << "TCP type not recognised" << std::endl;
 				}
 			}
 			else
 			{
-				std::cout << "packet not supported" << std::endl;
+				std::cout << "TCP packet not supported" << std::endl;
 			}
 		}
 	}

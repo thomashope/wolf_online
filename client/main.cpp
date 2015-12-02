@@ -21,9 +21,6 @@ using namespace InstantCG;
 #define SERVERIP "127.0.0.1"
 #define SERVERPORT 1177
 
-TCPConnection TCP_connection;
-UDPConnection UDP_connection;
-
 Player player;
 
 std::queue<BasePacket*> packet_queue;
@@ -108,14 +105,11 @@ int main(int argc, char* argv[])
 	SDLNet_UDP_Send(UDP_server, -1, UDP_send_packet);
 	*/
 
-	if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
-	{
-		quit("failed to make TCP connection");
-	}
+	TCPConnection TCP_connection;
+	UDPConnection UDP_connection;
 
-	
 	Uint32 time = 0;			//time of current frame
-	Uint32 oldTime = 0;			//time of previous frame
+	Uint32 oldTime = 0;			//time of previous frame	
 
 	// Initialise SDL and the screen
 	Screen screen( SCREEN_WIDTH, SCREEN_HEIGHT, "wolf_client" );
@@ -124,17 +118,20 @@ int main(int argc, char* argv[])
 	//bool sendPosition = false;	//
 
 	World world(&screen);
-	//world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
-	TCP_connection.RequestMapData( world );
+	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
+	
+	//if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
+	//{
+	//	quit("failed to make TCP connection");
+	//}
+	//TCP_connection.RequestMapData( world );
+	//TCP_connection.StartSenderThread();
 
-	TCP_connection.StartSenderThread( );
-
-	UDP_connection.Connect( SERVERIP, SERVERPORT );
-
-	MovePacket sendMe;
-	sendMe.SetPosition( Vec2(12.3f, 10.1f) );
-
-	UDP_connection.SendPacket( &sendMe );
+	if( !UDP_connection.Connect( SERVERIP, SERVERPORT ) )
+	{
+		quit( "failed to make UDP connection" );
+	}
+	UDP_connection.StartSenderThread();
 
 	//std::vector<Sprite*> sprites;
 	//sprites.push_back(new Sprite(16, 16));
@@ -167,7 +164,7 @@ int main(int argc, char* argv[])
 			MovePacket* movpac = new MovePacket();
 			movpac->SetPosition( newpos );
 
-			TCP_connection.QueuePacket( movpac );
+			UDP_connection.QueuePacket( movpac );
 		}
 
 		//tcp_send_packets( TCP_conection.GetSocket() );
@@ -209,10 +206,6 @@ int main(int argc, char* argv[])
 	//for (auto sprite : sprites) {
 	//	delete sprite;
 	//}
-
-	//SDLNet_FreePacket(UDP_send_packet);
-
-	screen.~Screen();
 	
 	quit();
 	return 0;

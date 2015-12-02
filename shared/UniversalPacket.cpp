@@ -26,7 +26,7 @@ std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 	case PT_MOVE:
 		return ConstructPacket( new MovePacket );
 	default:
-		break;
+		return nullptr;
 	}
 
 }

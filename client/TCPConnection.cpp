@@ -97,7 +97,7 @@ void TCPConnection::QueuePacket( BasePacket* packet )
 {
 	queue_mtx_.lock();
 
-	packet_queue_.push( packet );
+	packet_queue_.push( std::unique_ptr<BasePacket>( packet ) );
 
 	queue_mtx_.unlock();
 }
@@ -115,18 +115,20 @@ void TCPConnection::SendPackets()
 	{
 		//TODO: stopy the busy waiting
 
-		if( !packet_queue_.empty( ) )
+		if( !packet_queue_.empty() )
 		{
 			queue_mtx_.lock();
 
-			// send the front packet
-			SDLNet_TCP_Send( socket_, packet_queue_.front()->Data(), packet_queue_.front()->Size() );
-
 			// remove the packet form the queue
-			delete packet_queue_.front( );
+			std::unique_ptr<BasePacket> packet = std::move( packet_queue_.front() );
 			packet_queue_.pop();
 
 			queue_mtx_.unlock();
+
+			// send the front packet
+			SDLNet_TCP_Send(socket_, packet->Data(), packet->Size());
 		}
 	}
+
+	std::cout << "TCP thread closed" << std::endl;
 }
