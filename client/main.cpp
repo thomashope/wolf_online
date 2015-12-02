@@ -119,12 +119,12 @@ int main(int argc, char* argv[])
 	World world(&screen);
 	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
 	
-	//if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
-	//{
-	//	quit("failed to make TCP connection");
-	//}
-	//TCP_connection.RequestMapData( world );
-	//TCP_connection.StartSenderThread();
+	if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
+	{
+		quit("failed to make TCP connection");
+	}
+	TCP_connection.RequestMapData( world );
+	TCP_connection.StartSenderThread();
 
 	if( !UDP_connection.Connect( SERVERIP, SERVERPORT ) )
 	{
@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
 			movpac->SetID( 100 );
 			movpac->SetPosition( newpos );
 
-			UDP_connection.QueuePacket( movpac );
+			TCP_connection.QueuePacket( movpac );
 		}
 
 		// print all packets received
