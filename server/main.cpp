@@ -91,75 +91,6 @@ int main(int argc, char* argv[])
 		talk_udp( );
 
 		talk_tcp();
-
-		//if( clients.size() == 0 )
-		//	check_for_new_tcp( TCP_socket );
-
-		// try to accept a connection if not already accepted
-		//if( TCP_client_sock == NULL )
-		//{
-		//	TCP_client_sock = SDLNet_TCP_Accept( TCP_socket );
-		//}
-
-		// if a connection has been made, check it
-		//if( TCP_client_sock )
-
-		/*
-		for( Client& client : clients )
-		{
-			if( client.tcp_sock == NULL )
-				continue;
-						
-			if( SDLNet_TCP_Recv( client.tcp_sock, uniPacket.Data(), uniPacket.Size() ) <= 0 )
-			{
-				// an error occured, set the socket to null and try connecting again
-				// TODO: find out if this leaves allocated memory?
-				// TODO: remove the client from the array
-				client.tcp_sock = NULL;
-				continue;
-			}
-
-			auto recvd = uniPacket.CreateFromContents();
-
-			// check if its a join request
-			if (recvd)
-			{
-				//if (recvd->Type() == PT_JOIN_REQUEST)
-				//{
-				//	std::cout << "player requested join" << std::endl;
-				//
-				//	JoinResponsePacket response;
-				//	response.SetResponse(JR_OK);
-				//	response.SetGivenID(117);
-				//
-				//	SDLNet_TCP_Send( client.tcp_sock, response.Data( ), response.Size( ) );
-				//}
-				if (recvd->Type() == PT_MAP_REQUEST)
-				{
-					std::cout << "player asked for map data" << std::endl;
-
-					MapResponsePacket response;
-					response.SetMapData(mapData);
-
-					SDLNet_TCP_Send( client.tcp_sock, response.Data( ), response.Size( ) );
-				}
-				else if( recvd->Type() == PT_MOVE )
-				{
-					MovePacket* packet = (MovePacket*)recvd.get();
-
-					std::cout << "x: " << packet->GetPosition().x << " y: " << packet->GetPosition().y << std::endl;
-				}
-				else
-				{
-					std::cout << "TCP type not recognised" << std::endl;
-				}
-			}
-			else
-			{
-				std::cout << "TCP packet not supported" << std::endl;
-			}
-		}
-		*/
 	}
 
 	// cleanup
@@ -337,28 +268,28 @@ void talk_tcp()
 	if( clients.size( ) > 0 )
 	{
 		// Check each socket
-		for( auto& client : clients )
+		for( auto client = clients.begin(); client != clients.end(); )
 		{
-			if( SDLNet_SocketReady( client->GetTCPSocket() ) )
+			if( SDLNet_SocketReady( (*client)->GetTCPSocket() ) )
 			{
 				// Receive data directly into the universal packet
-				if( SDLNet_TCP_Recv( client->GetTCPSocket(), uniPacket.Data(), uniPacket.Size() ) > 0 )
+				if( SDLNet_TCP_Recv( (*client)->GetTCPSocket(), uniPacket.Data(), uniPacket.Size() ) > 0 )
 				{
-					auto recvd = uniPacket.CreateFromContents( );
+					auto recvd = uniPacket.CreateFromContents();
 
 					// check if its a join request
 					if( recvd )
 					{
-						if( recvd->Type( ) == PT_MAP_REQUEST )
+						if( recvd->Type() == PT_MAP_REQUEST )
 						{
 							std::cout << "player asked for map data" << std::endl;
 
 							MapResponsePacket response;
 							response.SetMapData( mapData );
 
-							SDLNet_TCP_Send( client->GetTCPSocket(), response.Data(), response.Size() );
+							SDLNet_TCP_Send( (*client)->GetTCPSocket(), response.Data(), response.Size() );
 						}
-						else if( recvd->Type( ) == PT_MOVE )
+						else if( recvd->Type() == PT_MOVE )
 						{
 							MovePacket* packet = (MovePacket*)recvd.get( );
 
@@ -373,12 +304,22 @@ void talk_tcp()
 					{
 						std::cout << "TCP packet not supported" << std::endl;
 					}
+
+					// move to the next client
+					client++;
 				}
 				else
 				{
-					fprintf( stderr, "SDLNet_TCP_Recv: %s\n", SDLNet_GetError( ) );
+					fprintf( stderr, "SDLNet_TCP_Recv: %s\n", SDLNet_GetError() );
 					// TODO: handle errors, kick the client?
+					std::cout << "Could not communciate with player: " << (int)(*client)->GetID() << std::endl;
+					SDLNet_TCP_DelSocket( TCP_SocketSet, (*client)->GetTCPSocket() );
+					client = clients.erase( client );
 				}
+			}
+			else
+			{
+				client++;
 			}
 		}		
 	}

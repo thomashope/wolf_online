@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 		if( oldpos.x != newpos.x )
 		{
 			MovePacket* movpac = new MovePacket();
-			movpac->SetID( 100 );
+			movpac->SetID( player.ID );
 			movpac->SetPosition( newpos );
 
 			TCP_connection.QueuePacket( movpac );
