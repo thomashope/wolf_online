@@ -56,7 +56,6 @@ char mapData[MAP_WIDTH * MAP_HEGIHT] =
 void init(); // initalises libraries
 void quit(std::string message = "");	// quits libraries and exits the program
 										// pass a string to show an error on exit
-void tcp_send_packets( TCPsocket server );
 
 int main(int argc, char* argv[])
 {	
@@ -162,12 +161,14 @@ int main(int argc, char* argv[])
 		if( oldpos.x != newpos.x )
 		{
 			MovePacket* movpac = new MovePacket();
+			movpac->SetID( 100 );
 			movpac->SetPosition( newpos );
 
 			UDP_connection.QueuePacket( movpac );
 		}
 
-		//tcp_send_packets( TCP_conection.GetSocket() );
+		// print all packets received
+		UDP_connection.RecvPackets();
 
 		/* // Render The Sprites
 		{
@@ -206,8 +207,10 @@ int main(int argc, char* argv[])
 	//for (auto sprite : sprites) {
 	//	delete sprite;
 	//}
-	
-	quit();
+
+	// cleanup
+	SDLNet_Quit();
+	SDL_Quit();
 	return 0;
 }
 
@@ -244,17 +247,4 @@ void quit(std::string message)
 	SDL_Quit();
 
 	exit( 0 );
-}
-
-void tcp_send_packets(TCPsocket server)
-{
-	while( !packet_queue.empty() )
-	{
-		// send the front packet
-		SDLNet_TCP_Send( server, packet_queue.front()->Data(), packet_queue.front()->Size() );
-		
-		// remove the packet form the queue
-		delete packet_queue.front();
-		packet_queue.pop();
-	}
 }

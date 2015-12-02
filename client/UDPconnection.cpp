@@ -1,5 +1,6 @@
 #include "UDPconnection.h"
 #include "../shared/BasePacket.h"
+#include "../shared/MovePacket.h"
 
 UDPConnection::UDPConnection() :
 sender_thread_(nullptr)
@@ -93,9 +94,7 @@ void UDPConnection::SendPackets()
 			SDLpacket.maxlen = packet->Size();
 
 			// Send the packet
-			std::cout << "sending UDP packet" << std::endl;
 			SDLNet_UDP_Send( socket_, -1, &SDLpacket );
-			//std::cout << "done sending UDP packet" << std::endl;
 
 			// clean dangling ptr
 			SDLpacket.data = nullptr;
@@ -106,18 +105,35 @@ void UDPConnection::SendPackets()
 	std::cout << "UDP thread closed" << std::endl;
 }
 
-void UDPConnection::SendPacket( BasePacket* packet )
+void UDPConnection::RecvPackets()
 {
 	UDPpacket SDLpacket;
+	// join the SDLpackt to the universal packet
+	SDLpacket.data = packet_.Data();
+	SDLpacket.maxlen = packet_.Size();
 
-	// setup the packet
-	SDLpacket.address.host = address_.host;
-	SDLpacket.address.port = address_.port;
-	SDLpacket.data = packet->Data();
-	SDLpacket.len = packet->Size();
-	SDLpacket.maxlen = packet->Size();
+	while( SDLNet_UDP_Recv( socket_, &SDLpacket ) )
+	{
+		auto recvd = packet_.CreateFromContents( );
 
-	std::cout << "sending UDP packet" << std::endl;
-	SDLNet_UDP_Send( socket_, -1, &SDLpacket );
-	std::cout << "done sending UDP packet" << std::endl;
+		if( recvd )
+		{
+			if( recvd->Type( ) == PT_MOVE )
+			{
+				MovePacket* packet = (MovePacket*)recvd.get( );
+
+				std::cout << "ID: " << (int)packet->GetID( )
+					<< " x: " << packet->GetPosition( ).x
+					<< " y: " << packet->GetPosition( ).y << std::endl;
+			}
+			else
+			{
+				std::cout << "UDP type not recognised" << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "UDP packet not supported" << std::endl;
+		}
+	}
 }

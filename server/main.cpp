@@ -137,7 +137,14 @@ int main(int argc, char* argv[])
 				{
 					MovePacket* packet = (MovePacket*)recvd.get();
 
-					std::cout << "x: " << packet->GetPosition().x << " y: " << packet->GetPosition().y << std::endl;
+					std::cout << "ID: " << (int)packet->GetID()
+						<< " x: " << packet->GetPosition().x
+						<< " y: " << packet->GetPosition().y << std::endl;
+
+					// change the packet's id and send it back
+					UDP_received_packet.data[1] = 118;
+					SDLNet_UDP_Send( UDP_server_socket, -1, &UDP_received_packet );
+
 				}
 				else
 				{
@@ -218,7 +225,6 @@ int main(int argc, char* argv[])
 	}
 
 	// cleanup
-	//SDLNet_FreePacket( UDP_received_packet );
 	SDLNet_Quit( );
 	SDL_Quit( );
 	return 0;
@@ -275,8 +281,7 @@ void check_for_new_tcp(TCPsocket server_sock)
 			JoinResponsePacket response;
 			response.SetResponse( JR_REJECT );
 
-			if( SDLNet_TCP_Send( 
-				new_socket, response.Data(), response.Size() ) < response.Size() )
+			if( SDLNet_TCP_Send( new_socket, response.Data(), response.Size() ) < response.Size() )
 			{
 				// the whole packet could not be sent, some error occured
 				return;

@@ -25,7 +25,7 @@ public:
 	// Create a thread that sends packets as soon as they are added to the queue
 	void StartSenderThread();
 
-	void SendPacket( BasePacket* packet );
+	void RecvPackets();
 
 private:
 	IPaddress address_;
