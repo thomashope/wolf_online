@@ -1,5 +1,5 @@
 #include "UniversalPacket.h"
-#include "BasePacket.h"
+#include "HeartbeatPacket.h"
 #include "JoinRequestPacket.h"
 #include "JoinResponsePacket.h"
 #include "MapRequestPacket.h"
@@ -13,8 +13,7 @@ std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 	switch (data_[0])
 	{
 	case PT_HEARTBEAT:
-		//TODO
-		break;
+		return ConstructPacket( new HeartbeatPacket );
 	case PT_JOIN_REQUEST:
 		return ConstructPacket( new JoinRequestPacket );
 	case PT_JOIN_RESPONSE:

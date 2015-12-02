@@ -54,80 +54,45 @@ struct Client {
 
 std::vector<Client> clients;
 
+IPaddress address;
+TCPsocket TCP_socket;
+UDPsocket UDP_socket;
+UDPpacket UDP_packet;
 UniversalPacket uniPacket;
 
+void init();
 void check_for_new_tcp( TCPsocket server_sock );
 
 int main(int argc, char* argv[])
 {
 	std::cout << "Starting wolf_online server..." << std::endl;
 
-	// initalise libraries
-	if( SDL_Init( 0 ) == -1 )
-	{
-		std::cout << "SDL_Init: %s\n" <<  SDL_GetError() << std::endl;
-		exit(1);
-	}
-	if (SDLNet_Init() == -1)
-	{
-		std::cout << "SDLNet_Init: %s\n" << SDLNet_GetError() << std::endl;
-		exit(2);
-	}
-		
-	UDPsocket UDP_server_socket;
-	UDPpacket UDP_received_packet;
-	
-	/* Open a socket */
-	if( !(UDP_server_socket = SDLNet_UDP_Open( SERVERPORT )) )
-	{
-		fprintf( stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError() );
-		exit( EXIT_FAILURE );
-	}
-	std::cout << "Server listening on port: " << SERVERPORT << std::endl;
-	/* Allocate memory for the packet */
-	//if( !(UDP_received_packet = SDLNet_AllocPacket( 128 )) )
-	//{
-	//	fprintf( stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError() );
-	//	exit( EXIT_FAILURE );
-	//}
-	// overlap the received data into the universal packet
-	UDP_received_packet.data = uniPacket.Data();
-	UDP_received_packet.maxlen = uniPacket.Size();
+	init();
+			
 
 	// create a listening TCP socket for the server
-	IPaddress address;
 	//TCPsocket TCP_client_sock = NULL;
-	TCPsocket TCP_server_sock;
+		
 
-	if( SDLNet_ResolveHost( &address, NULL, SERVERPORT ) == -1 ) {
-		printf( "SDLNet_ResolveHost: %s\n", SDLNet_GetError( ) );
-		exit( 4 );
-	}
-	TCP_server_sock = SDLNet_TCP_Open( &address );
-	if( !TCP_server_sock ) {
-		printf( "SDLNet_TCP_Open: %s\n", SDLNet_GetError( ) );
-		exit( 5 );
-	}
-
-	//check_for_new_tcp( TCP_server_sock );
+	//check_for_new_tcp( TCP_socket );
 
 	/* Main loop */
 	bool quit = false;
 	while( !quit )
 	{
 		/* Wait a packet. UDP_Recv returns != 0 if a packet is coming */
-		//SDLNet_UDP_Recv( UDP_server_socket, &UDP_received_packet );
-		while( SDLNet_UDP_Recv( UDP_server_socket, &UDP_received_packet ) )
+		//SDLNet_UDP_Recv( UDP_socket, &UDP_packet );
+		while( SDLNet_UDP_Recv( UDP_socket, &UDP_packet ) )
 		{
 			/*/ print packet info
 			std::cout << "UDP Packet incoming\n" << std::endl;
-			std::cout << "\tChan:    " << UDP_received_packet.channel << std::endl;
-			std::cout << "\tLen:     " << UDP_received_packet.len << std::endl;
-			std::cout << "\tMaxlen:  " << UDP_received_packet.maxlen << std::endl;
-			std::cout << "\tStatus:  " << UDP_received_packet.status << std::endl;
+			std::cout << "\tChan:    " << UDP_packet.channel << std::endl;
+			std::cout << "\tLen:     " << UDP_packet.len << std::endl;
+			std::cout << "\tMaxlen:  " << UDP_packet.maxlen << std::endl;
+			std::cout << "\tStatus:  " << UDP_packet.status << std::endl;
 			std::cout << "\tAddress: " << std::hex
-				<< UDP_received_packet.address.host << " " << std::dec
-				<< UDP_received_packet.address.port << std::endl;
+				<< UDP_packet.address.host << " " << std::dec
+				<< UDP_packet.address.port << std::endl;
 			//*/
 			auto recvd = uniPacket.CreateFromContents();
 
@@ -142,8 +107,8 @@ int main(int argc, char* argv[])
 						<< " y: " << packet->GetPosition().y << std::endl;
 
 					// change the packet's id and send it back
-					UDP_received_packet.data[1] = 118;
-					SDLNet_UDP_Send( UDP_server_socket, -1, &UDP_received_packet );
+					UDP_packet.data[1] = 118;
+					SDLNet_UDP_Send( UDP_socket, -1, &UDP_packet );
 
 				}
 				else
@@ -158,12 +123,12 @@ int main(int argc, char* argv[])
 		}
 
 		//if( clients.size() == 0 )
-		//	check_for_new_tcp( TCP_server_sock );
+		//	check_for_new_tcp( TCP_socket );
 
 		// try to accept a connection if not already accepted
 		//if( TCP_client_sock == NULL )
 		//{
-		//	TCP_client_sock = SDLNet_TCP_Accept( TCP_server_sock );
+		//	TCP_client_sock = SDLNet_TCP_Accept( TCP_socket );
 		//}
 
 		// if a connection has been made, check it
@@ -228,6 +193,46 @@ int main(int argc, char* argv[])
 	SDLNet_Quit( );
 	SDL_Quit( );
 	return 0;
+}
+
+void init()
+{
+	// Initalise SDL
+	if( SDL_Init( SDL_INIT_EVERYTHING ) == -1 )
+	{
+		std::cout << "SDL_Init: %s\n" << SDL_GetError( ) << std::endl;
+		exit( 1 );
+	}
+	// Initalise SDLNet
+	if( SDLNet_Init( ) == -1 )
+	{
+		std::cout << "SDLNet_Init: %s\n" << SDLNet_GetError( ) << std::endl;
+		exit( 2 );
+	}
+	// Resolve Host
+	if( SDLNet_ResolveHost( &address, NULL, SERVERPORT ) == -1 ) {
+		printf( "SDLNet_ResolveHost: %s\n", SDLNet_GetError( ) );
+		exit( 3 );
+	}
+	// Open TCP socket
+	TCP_socket = SDLNet_TCP_Open( &address );
+	if( !TCP_socket ) {
+		printf( "SDLNet_TCP_Open: %s\n", SDLNet_GetError( ) );
+		exit( 4 );
+	}
+	// Open UDP socket
+	if( !(UDP_socket = SDLNet_UDP_Open( SERVERPORT )) )
+	{
+		fprintf( stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError( ) );
+		exit( 5 );
+	}
+
+	std::cout << "Server listening on port: " << SERVERPORT << std::endl;
+
+	// Intertwine the SDLNet packet and the UniversalPacket
+	// This allows us to use the SDL funcitons with custom data handling
+	UDP_packet.data = uniPacket.Data( );
+	UDP_packet.maxlen = uniPacket.Size( );
 }
 
 void check_for_new_tcp(TCPsocket server_sock)
