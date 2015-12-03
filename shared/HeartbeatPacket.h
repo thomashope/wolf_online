@@ -10,7 +10,9 @@
 class HeartbeatPacket : public BasePacket
 {
 public:
-	HeartbeatPacket() : BasePacket( PT_HEARTBEAT, HEARTBEAT_PACKET_SIZE ) {}
+	HeartbeatPacket();
+	HeartbeatPacket( Uint8 ID );
+
 	~HeartbeatPacket() {}
 
 	void SetID( Uint8 ID );

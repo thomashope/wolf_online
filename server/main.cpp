@@ -11,6 +11,7 @@
 #include "../shared/JoinResponsePacket.h"
 #include "../shared/MapResponsePacket.h"
 #include "../shared/MovePacket.h"
+#include "../shared/HeartbeatPacket.h"
 #include "Client.h"
 
 #define SERVERIP "127.0.0.1"
@@ -73,9 +74,15 @@ void talk_udp();
 
 void talk_tcp();
 
+void udp_send_to( Uint8 ID, const BasePacket& packet );
+void udp_send_all( const BasePacket& packet );
+void udp_send_all_except( Uint8 ID, const BasePacket& packet);
+
+Client* find_client( Uint8 ID);
+
 int main(int argc, char* argv[])
 {
-	init();		
+	init();
 
 
 	/* Main loop */
@@ -195,7 +202,7 @@ void accept_client()
 			}
 
 			// add the new client to the vector
-			clients.push_back( std::unique_ptr<Client>(new Client( response.GetGivenID(), new_socket )) );
+			clients.push_back( std::unique_ptr<Client>(new Client( response.GetGivenID(), new_socket, UDP_socket )) );
 
 			// Add the new client to the socket set
 			SDLNet_TCP_AddSocket( TCP_SocketSet, clients.back( )->GetTCPSocket( ) );
@@ -238,18 +245,34 @@ void talk_udp()
 
 		if( recvd )
 		{
-			if( recvd->Type( ) == PT_MOVE )
+			if( recvd->Type() == PT_MOVE )
 			{
 				MovePacket* packet = (MovePacket*)recvd.get( );
 
-				std::cout << "ID: " << (int)packet->GetID( )
-					<< " x: " << packet->GetPosition( ).x
-					<< " y: " << packet->GetPosition( ).y << std::endl;
+				std::cout << "ID: " << (int)packet->GetID()
+					<< " x: " << packet->GetPosition().x
+					<< " y: " << packet->GetPosition().y << std::endl;
+
+				// Resend the move packet to the other players
+				//MovePacket reply;
+				//reply.SetID( packet->GetID() );
+				//reply.SetPosition( packet->GetPosition() );
+				udp_send_all_except( packet->GetID(), *packet );
 
 				// change the packet's id and send it back
-				UDP_packet.data[1] = 118;
-				SDLNet_UDP_Send( UDP_socket, -1, &UDP_packet );
+				//UDP_packet.data[1] = 118;
+				//SDLNet_UDP_Send( UDP_socket, -1, &UDP_packet );
+			}
+			else if( recvd->Type() == PT_HEARTBEAT )
+			{
+				HeartbeatPacket* packet = (HeartbeatPacket*)recvd.get( );
 
+				// Set the clients UDP address
+				Client* sender = find_client( packet->GetID() );
+				if( sender )
+				{
+					sender->SetUDPAddress( UDP_packet.address );
+				}
 			}
 			else
 			{
@@ -291,9 +314,9 @@ void talk_tcp()
 						}
 						else if( recvd->Type() == PT_MOVE )
 						{
-							MovePacket* packet = (MovePacket*)recvd.get( );
+							MovePacket* packet = (MovePacket*)recvd.get();
 
-							std::cout << "x: " << packet->GetPosition( ).x << " y: " << packet->GetPosition( ).y << std::endl;
+							std::cout << "ID: " << packet->GetID() << " x: " << packet->GetPosition( ).x << " y: " << packet->GetPosition( ).y << std::endl;
 						}
 						else
 						{
@@ -321,6 +344,42 @@ void talk_tcp()
 			{
 				client++;
 			}
-		}		
+		}
 	}
+}
+
+void udp_send_all( const BasePacket& packet )
+{
+	for( auto& client : clients )
+	{
+		client->UDPSend( packet );
+	}
+}
+
+void udp_send_all_except( Uint8 ID, const BasePacket& packet )
+{
+	for( auto& client : clients)
+	{
+		if( client->GetID() != ID)
+		{
+			client->UDPSend( packet );
+		}
+	}
+}
+
+void udp_send_to( Uint8 ID, const BasePacket& packet )
+{
+	find_client( ID )->UDPSend( packet );
+}
+
+Client* find_client( Uint8 ID )
+{
+	for( auto& client : clients)
+	{
+		if( client->GetID() == ID)
+		{
+			return client.get();
+		}
+	}
+	return nullptr;
 }

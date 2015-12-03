@@ -9,8 +9,8 @@
 #include "world.h"
 #include "TCPConnection.h"
 #include "UDPconnection.h"
-#include "../shared/BasePacket.h"
 #include "../shared/MovePacket.h"
+#include "../shared/HeartbeatPacket.h"
 using namespace InstantCG;
 
 #define SCREEN_WIDTH 640
@@ -93,6 +93,8 @@ int main(int argc, char* argv[])
 	}
 	UDP_connection.StartSenderThread();
 
+  UDP_connection.QueuePacket( new HeartbeatPacket( player.ID ) );
+
 	//std::vector<Sprite*> sprites;
 	//sprites.push_back(new Sprite(16, 16));
 	//sprites.push_back(new Sprite(20, 16));
@@ -125,7 +127,7 @@ int main(int argc, char* argv[])
 			movpac->SetID( player.ID );
 			movpac->SetPosition( newpos );
 
-			TCP_connection.QueuePacket( movpac );
+			UDP_connection.QueuePacket( movpac );
 		}
 
 		// print all packets received

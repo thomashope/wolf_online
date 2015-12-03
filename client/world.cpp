@@ -15,7 +15,11 @@ screen_( screen )
 		std::cerr << "Error getting resource path: " << SDL_GetError() << std::endl;
 	}
 
+#if defined(_WIN32)
 	std::string resPath( "../../resources/" );
+#else
+	std::string resPath( "../resources/");
+#endif
 
 	// Load the textures
 	textures_.push_back( new Texture( screen_->GetRenderer(), projectPath + resPath + "wall_1.bmp" ) );
@@ -156,7 +160,7 @@ void World::Render(const Player& player)
 
 		//Calculate height of line to draw on screen
 		int lineHeight = abs( int( screen_->Height() / screen_->GetDepthBuffer()[x].perpDist ) );
-		
+
 		int textureIndex = GetGrid( mapX, mapY );
 		if( textureIndex >= textures_.size() )
 		{
