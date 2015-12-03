@@ -5,7 +5,7 @@
 #include <SDL2/SDL.h>
 class BasePacket;
 
-#define UNIVERSAL_PACKET_SIZE 256
+#define UNIVERSAL_PACKET_SIZE 512
 
 class UniversalPacket
 {

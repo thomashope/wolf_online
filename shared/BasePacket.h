@@ -10,9 +10,10 @@ enum PacketType : Uint8 {
 	PT_HEARTBEAT = 0,
 	PT_JOIN_REQUEST = 1,
 	PT_JOIN_RESPONSE = 2,
-	PT_MAP_REQUEST = 3,
-	PT_MAP_RESPONSE = 4,
-	PT_MOVE = 5,
+	PT_PLAYER_JOINED = 3,
+	PT_MAP_REQUEST = 4,
+	PT_MAP_RESPONSE = 5,
+	PT_MOVE = 6,
 	PT_UNKNOWN = 0xff
 };
 
@@ -25,7 +26,7 @@ protected:
 		data_ = std::unique_ptr<Uint8[]>(new Uint8[size_]());	// allocates size bytes for packet data
 																// initalise array to zero thanks to []();
 
-		// set the first byte of the packet to the type 
+		// set the first byte of the packet to the type
 		data_[0] = type;
 	}
 
@@ -45,6 +46,9 @@ public:
 
 	// return the number of bytes of data in the packet
 	virtual unsigned int Size() const final { return size_; }
+
+	// Print the contents of the packe to cout
+	virtual void Print() const { std::cout << "Packet print not defined" << std::endl; }
 
 	// returns the type of the packet
 	// packet types cannoct be changed after construction ...

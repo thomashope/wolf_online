@@ -23,12 +23,12 @@ void MovePacket::SetAngle(float degrees)
 	SDLNet_Write32( floatToUint32( degrees ), &data_[18] );
 }
 
-Uint8 MovePacket::GetID()
+Uint8 MovePacket::GetID() const
 {
 	return data_[1];
 }
 
-Vec2 MovePacket::GetPosition()
+Vec2 MovePacket::GetPosition() const
 {
 	return Vec2(
 		Uint32toFloat( SDLNet_Read32( &data_[2] ) ),
@@ -36,7 +36,7 @@ Vec2 MovePacket::GetPosition()
 		);
 }
 
-Vec2 MovePacket::GetVelocity()
+Vec2 MovePacket::GetVelocity() const
 {
 	return Vec2(
 		Uint32toFloat( SDLNet_Read32( &data_[10] ) ),
@@ -44,7 +44,15 @@ Vec2 MovePacket::GetVelocity()
 		);
 }
 
-float MovePacket::GetAngle()
+float MovePacket::GetAngle() const
 {
 	return Uint32toFloat( SDLNet_Read32( &data_[17] ) );
+}
+
+void MovePacket::Print() const
+{
+	std::cout << "ID: " << GetID()
+		<< " Pos: " << GetPosition().x << " " << GetPosition().y
+		<< " Vel: " << GetVelocity().x << " " << GetVelocity().y
+		<< " Deg: " << GetAngle() << std::endl;
 }

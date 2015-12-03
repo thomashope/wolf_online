@@ -16,9 +16,9 @@ Client::~Client()
 	SDLNet_TCP_Close( TCPsocket_ );
 }
 
-void Client::TCPSend( std::unique_ptr<BasePacket> packet )
+void Client::TCPSend( const BasePacket& packet )
 {
-
+	SDLNet_TCP_Send( TCPsocket_, packet.Data(), packet.Size() );
 }
 
 void Client::UDPSend( const BasePacket& packet )

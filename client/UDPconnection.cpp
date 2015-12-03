@@ -44,7 +44,7 @@ bool UDPConnection::Connect( std::string host, Uint16 port )
 	//SDLpacket_.len = UNIVERSAL_PACKET_SIZE;		// Packet size in bytes
 	//SDLpacket_.maxlen = UNIVERSAL_PACKET_SIZE;
 	//SDLpacket_.data = packet_.Data();			// use the buffer in the universal packet
-	
+
 	// connected successfully
 	return true;
 }
@@ -81,11 +81,11 @@ void UDPConnection::SendPackets()
 
 			// protect the queue
 			queue_mtx_.lock();
-			
+
 			// remove the packet from the front of the queue
 			BasePacket* packet = packet_queue_.front().release();
 			packet_queue_.pop();
-			
+
 			queue_mtx_.unlock();
 
 			// point the SDL packet to the data in the BasePacket
@@ -105,7 +105,7 @@ void UDPConnection::SendPackets()
 	std::cout << "UDP thread closed" << std::endl;
 }
 
-void UDPConnection::RecvPackets()
+void UDPConnection::Read()
 {
 	UDPpacket SDLpacket;
 	// join the SDLpackt to the universal packet
@@ -120,11 +120,11 @@ void UDPConnection::RecvPackets()
 		{
 			if( recvd->Type( ) == PT_MOVE )
 			{
-				MovePacket* packet = (MovePacket*)recvd.get( );
-
-				std::cout << "ID: " << (int)packet->GetID( )
-					<< " x: " << packet->GetPosition( ).x
-					<< " y: " << packet->GetPosition( ).y << std::endl;
+				recvd->Print();
+			}
+			else if( recvd->Type() == PT_PLAYER_JOINED )
+			{
+				recvd->Print();
 			}
 			else
 			{

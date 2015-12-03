@@ -5,6 +5,9 @@
 #include "../shared/JoinResponsePacket.h"
 #include "../shared/MapRequestPacket.h"
 #include "../shared/MapResponsePacket.h"
+#include "../shared/PlayerJoinedPacket.h"
+#include "../shared/HeartbeatPacket.h"
+#include "../shared/MovePacket.h"
 
 TCPConnection::TCPConnection() :
 sender_thread_( nullptr )
@@ -13,6 +16,8 @@ sender_thread_( nullptr )
 	buffer_ = new Uint8[MAX_BUFFER];
 
 	close_thread_ = false;
+
+	socket_set_ = SDLNet_AllocSocketSet( 1 );
 }
 
 TCPConnection::~TCPConnection()
@@ -25,6 +30,8 @@ TCPConnection::~TCPConnection()
 	// free the buffer
 	delete[] buffer_;
 	buffer_ = nullptr;
+
+	SDLNet_FreeSocketSet( socket_set_ );
 }
 
 bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
@@ -43,7 +50,7 @@ bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
 		std::cerr << "SDLNet_TCP_Open error: " << SDLNet_GetError() << std::endl;
 		return false;
 	}
-	
+
 	std::cout << "Established connection, requesting join..." << std::endl;
 
 	JoinRequestPacket request;
@@ -66,31 +73,16 @@ bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
 	player.ID = response.GetGivenID();
 	std::cout << "The server assigned you an ID of " << (int)player.ID << std::endl;
 
+	// Add the socket to the set
+	SDLNet_TCP_AddSocket( socket_set_, socket_ );
+
 	// return success
 	return true;
 }
 
-bool TCPConnection::RequestMapData( World& world )
+void TCPConnection::AttachWorld( World* world )
 {
-	MapRequestPacket request;
-	MapResponsePacket response;
-
-	std::cout << "requsting map data" << std::endl;
-
-	// ask the server for the map data
-	SDLNet_TCP_Send( socket_, request.Data(), request.Size() );
-
-	// recv the whole map ( this blocks untill all the data is received )
-	if( SDLNet_TCP_Recv( socket_, response.Data(), response.Size() ) < response.Size() )
-	{
-		std::cout << "error recving map data" << std::endl;
-		return false;
-	}
-	
-	// construct the world
-	world.SetMap( response.GetMapData(), response.Width(), response.Height() );
-
-	return true;
+	world_ = world;
 }
 
 void TCPConnection::QueuePacket( BasePacket* packet )
@@ -131,4 +123,94 @@ void TCPConnection::SendPackets()
 	}
 
 	std::cout << "TCP thread closed" << std::endl;
+}
+
+	std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
+{
+	SDLNet_CheckSockets( socket_set_, 0 );
+
+	if( SDLNet_SocketReady( socket_ ) )
+	{
+		if( SDLNet_TCP_Recv( socket_, packet_.Data(), packet_.Size() ) > 0 )
+		{
+			std::unique_ptr<BasePacket> recvd = packet_.CreateFromContents();
+			if( recvd )
+			{
+				return recvd;
+			} else {
+				std::cout << "TCP Packet type not recognised" << std::endl;
+				return nullptr;
+			}
+		}
+		else
+		{
+			std::cout << "SDLNet_TCP_Recv: " << SDLNet_GetError() << std::endl;
+			//TODO: tcp error occured, do something, quit?
+			return nullptr;
+		}
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+void TCPConnection::Read()
+{
+	SDLNet_CheckSockets( socket_set_, 0 );
+
+	while( SDLNet_SocketReady( socket_ ) )
+	{
+		// Receive data directly into the universal packet
+		//TODO: check a complete packet is being received
+		if( SDLNet_TCP_Recv( socket_, packet_.Data(), packet_.Size() ) > 0 )
+		{
+			auto recvd = packet_.CreateFromContents();
+
+			// check if its a join request
+			if( recvd )
+			{
+				if( recvd->Type() == PT_HEARTBEAT )
+				{
+					HeartbeatPacket* packet = (HeartbeatPacket*)recvd.get();
+
+					std::cout << "ID: " << (int)packet->GetID() << " sent heartbeat" << std::endl;
+				}
+				else if( recvd->Type() == PT_MOVE )
+				{
+					MovePacket* packet = (MovePacket*)recvd.get();
+
+					std::cout << "ID: " << (int)packet->GetID() << " x: " << packet->GetPosition( ).x << " y: " << packet->GetPosition( ).y << std::endl;
+				}
+				else if( recvd->Type() == PT_MAP_RESPONSE )
+				{
+					MapResponsePacket* packet = (MapResponsePacket*)recvd.get();
+
+					std::cout << "server sent map data " << std::endl;
+					world_->SetMap( packet->GetMapData(), packet->Width(), packet->Height() );
+				}
+				else if( recvd->Type() == PT_PLAYER_JOINED )
+				{
+					PlayerJoinedPacket* packet = (PlayerJoinedPacket*)recvd.get();
+
+					std::cout << "New player: " << (int)packet->GetID() << std::endl;
+				}
+				else
+				{
+					std::cout << "TCP type not recognised: " << (int)recvd->Type() << std::endl;
+				}
+			}
+			else
+			{
+				std::cout << "TCP packet not supported" << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "SDLNet_TCP_Recv: " << SDLNet_GetError() << std::endl;
+			//TODO: tcp error occured, do something, quit?
+		}
+
+		SDLNet_CheckSockets( socket_set_, 0 );
+	}
 }

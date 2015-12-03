@@ -7,10 +7,10 @@
 #include "sprite.h"
 #include "input.h"
 #include "world.h"
-#include "TCPConnection.h"
-#include "UDPconnection.h"
+#include "Connection.h"
 #include "../shared/MovePacket.h"
 #include "../shared/HeartbeatPacket.h"
+#include "../shared/MapRequestPacket.h"
 using namespace InstantCG;
 
 #define SCREEN_WIDTH 640
@@ -65,8 +65,7 @@ int main(int argc, char* argv[])
 
 	init(); // Initailise the libraries
 
-	TCPConnection TCP_connection;
-	UDPConnection UDP_connection;
+	Connection server;
 
 	Uint32 time = 0;			//time of current frame
 	Uint32 oldTime = 0;			//time of previous frame
@@ -80,20 +79,22 @@ int main(int argc, char* argv[])
 	World world(&screen);
 	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
 
-	if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
-	{
-		quit("failed to make TCP connection");
-	}
-	TCP_connection.RequestMapData( world );
-	TCP_connection.StartSenderThread();
+  server.Connect( player, world, SERVERIP, SERVERPORT );
+	// if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
+	// {
+	// 	quit("failed to make TCP connection");
+	// }
+	// TCP_connection.RequestMapData( world );
+	// TCP_connection.StartSenderThread();
+  // TCP_connection.QueuePacket( new MapRequestPacket() );
+  //
+	// if( !UDP_connection.Connect( SERVERIP, SERVERPORT ) )
+	// {
+	// 	quit( "failed to make UDP connection" );
+	// }
+	// UDP_connection.StartSenderThread();
 
-	if( !UDP_connection.Connect( SERVERIP, SERVERPORT ) )
-	{
-		quit( "failed to make UDP connection" );
-	}
-	UDP_connection.StartSenderThread();
-
-  UDP_connection.QueuePacket( new HeartbeatPacket( player.ID ) );
+  //UDP_connection.QueuePacket( new HeartbeatPacket( player.ID ) );
 
 	//std::vector<Sprite*> sprites;
 	//sprites.push_back(new Sprite(16, 16));
@@ -127,11 +128,13 @@ int main(int argc, char* argv[])
 			movpac->SetID( player.ID );
 			movpac->SetPosition( newpos );
 
-			UDP_connection.QueuePacket( movpac );
+			server.TCPSend( movpac );
 		}
 
 		// print all packets received
-		UDP_connection.RecvPackets();
+		//UDP_connection.Read();
+
+    server.Read();
 
 		/* // Render The Sprites
 		{

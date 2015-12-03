@@ -17,7 +17,9 @@ public:
 
 	void SetID( Uint8 ID );
 
-	Uint8 GetID();
+	Uint8 GetID() const;
+
+	void Print() const override;
 };
 
 #endif

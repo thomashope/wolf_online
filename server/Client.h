@@ -14,7 +14,7 @@ public:
 	//TODO: handle errors
 	void UDPSend( const BasePacket& packet );
 	//TODO: handle errors
-	void TCPSend( std::unique_ptr<BasePacket> packet );
+	void TCPSend( const BasePacket& packet );
 
 	// set the destination for UDP packets bound for this client
 	void SetUDPAddress( IPaddress address );

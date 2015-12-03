@@ -5,6 +5,7 @@
 #include "MapRequestPacket.h"
 #include "MapResponsePacket.h"
 #include "MovePacket.h"
+#include "PlayerJoinedPacket.h"
 
 std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 {
@@ -24,6 +25,8 @@ std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 		return ConstructPacket( new MapResponsePacket );
 	case PT_MOVE:
 		return ConstructPacket( new MovePacket );
+	case PT_PLAYER_JOINED:
+		return ConstructPacket( new PlayerJoinedPacket );
 	default:
 		return nullptr;
 	}
@@ -38,4 +41,3 @@ std::unique_ptr<BasePacket> UniversalPacket::ConstructPacket(BasePacket* packet)
 	// move out the packet
 	return std::unique_ptr<BasePacket>(packet);
 }
-

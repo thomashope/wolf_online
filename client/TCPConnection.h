@@ -9,6 +9,7 @@
 #include <atomic>
 #include <thread>
 #include <memory>
+#include "../shared/UniversalPacket.h"
 
 class World;
 class Player;
@@ -23,7 +24,7 @@ public:
 	bool Connect(Player& player, std::string host, Uint16 port);
 
 	// returns true if the server sent the map successfully, or false if there was an error
-	bool RequestMapData( World& world );
+	void AttachWorld( World*	 world );
 
 	// adds a packet to the queue
 	void QueuePacket( BasePacket* packet );
@@ -31,9 +32,18 @@ public:
 	// creates a thread that sends packets as soon as they are added to the queue
 	void StartSenderThread();
 
+	void Read();
+
+	std::unique_ptr<BasePacket> GetNextPacket();
+
 private:
 	IPaddress address_;	// Address of the recipient
 	TCPsocket socket_;	// socket to send over
+	SDLNet_SocketSet socket_set_;
+	UniversalPacket packet_;
+
+	// Used to update the world map
+	World* world_;
 
 	// TODO: remove this
 	// data received is stored in the bufferr

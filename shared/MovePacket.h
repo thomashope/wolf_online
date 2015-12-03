@@ -17,12 +17,12 @@ public:
 	void SetVelocity(Vec2 velocity);
 	void SetAngle(float degrees);
 
-	Uint8 GetID();
-	Vec2 GetPosition();
-	Vec2 GetVelocity();
-	float GetAngle();
+	Uint8 GetID() const;
+	Vec2 GetPosition() const;
+	Vec2 GetVelocity() const;
+	float GetAngle() const;
 
-private:
+	void Print() const override;
 };
 
 #endif

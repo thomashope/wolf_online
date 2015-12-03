@@ -12,6 +12,7 @@
 #include "../shared/MapResponsePacket.h"
 #include "../shared/MovePacket.h"
 #include "../shared/HeartbeatPacket.h"
+#include "../shared/PlayerJoinedPacket.h"
 #include "Client.h"
 
 #define SERVERIP "127.0.0.1"
@@ -75,9 +76,13 @@ void talk_udp();
 
 void talk_tcp();
 
+void tcp_send_to( Uint8 ID, const BasePacket& packet );
+void tcp_send_all( const BasePacket& packet );
+void tcp_send_all_except( Uint8 ID, const BasePacket& packet );
+
 void udp_send_to( Uint8 ID, const BasePacket& packet );
 void udp_send_all( const BasePacket& packet );
-void udp_send_all_except( Uint8 ID, const BasePacket& packet);
+void udp_send_all_except( Uint8 ID, const BasePacket& packet );
 
 Client* get_client( Uint8 ID );
 
@@ -193,7 +198,6 @@ void accept_client()
 			JoinResponsePacket response;
 			response.SetResponse(JR_OK);
 
-			// TODO: make ID allocation not broken
 			response.SetGivenID( get_availible_id() );
 
 			if( SDLNet_TCP_Send( new_socket, response.Data(), response.Size() ) < response.Size() )
@@ -206,10 +210,27 @@ void accept_client()
 			clients.push_back( std::unique_ptr<Client>(new Client( response.GetGivenID(), new_socket, UDP_socket )) );
 
 			// Add the new client to the socket set
-			SDLNet_TCP_AddSocket( TCP_SocketSet, clients.back( )->GetTCPSocket( ) );
+			SDLNet_TCP_AddSocket( TCP_SocketSet, clients.back()->GetTCPSocket() );
 			SDLNet_CheckSockets( TCP_SocketSet, 0 );
 
-			std::cout << "Client joined with ID: " << (int)response.GetGivenID() << std::endl;
+			// Tell other clients new client joined
+			PlayerJoinedPacket playerJoined( clients.back()->GetID() );
+			tcp_send_all_except( playerJoined.GetID(), playerJoined );
+
+			// Tell new client about all other clients
+			std::cout << "Telling " << playerJoined.GetID() << " about ";
+			for( int i = 0; i < clients.size(); i++ )
+			{
+				PlayerJoinedPacket currentPlayer( clients[i]->GetID() );
+
+				// dont tell the new client about themselvs
+				//if( clients[i]->GetID() != playerJoined.GetID() )
+					clients.back()->TCPSend( currentPlayer );
+					std::cout << (int)clients[i]->GetID() << ", ";
+			}
+			std::cout << std::endl;
+
+			std::cout << "Client joined with ID: " << (int)clients.back()->GetID() << std::endl;
 		}
 		else
 		{
@@ -228,8 +249,7 @@ void accept_client()
 
 void talk_udp()
 {
-	/* Wait a packet. UDP_Recv returns != 0 if a packet is coming */
-	//SDLNet_UDP_Recv( UDP_socket, &UDP_packet );
+	// recv all pending udp packets
 	while( SDLNet_UDP_Recv( UDP_socket, &UDP_packet ) )
 	{
 		/*/ print packet info
@@ -254,26 +274,20 @@ void talk_udp()
 					<< " x: " << packet->GetPosition().x
 					<< " y: " << packet->GetPosition().y << std::endl;
 
-				// Resend the move packet to the other players
-				//MovePacket reply;
-				//reply.SetID( packet->GetID() );
-				//reply.SetPosition( packet->GetPosition() );
 				udp_send_all_except( packet->GetID(), *packet );
-
-				// change the packet's id and send it back
-				//UDP_packet.data[1] = 118;
-				//SDLNet_UDP_Send( UDP_socket, -1, &UDP_packet );
 			}
 			else if( recvd->Type() == PT_HEARTBEAT )
 			{
 				HeartbeatPacket* packet = (HeartbeatPacket*)recvd.get( );
 
-				// Set the clients UDP address
-				Client* sender = get_client( packet->GetID() );
-				if( sender )
-				{
-					sender->SetUDPAddress( UDP_packet.address );
-				}
+				std::cout << "ID: " << (int)packet->GetID() << " sent heartbeat" << std::endl;
+
+				// // Set the clients UDP address
+				// Client* sender = get_client( packet->GetID() );
+				// if( sender )
+				// {
+				// 	sender->SetUDPAddress( UDP_packet.address );
+				// }
 			}
 			else
 			{
@@ -311,7 +325,7 @@ void talk_tcp()
 							MapResponsePacket response;
 							response.SetMapData( mapData );
 
-							SDLNet_TCP_Send( (*client)->GetTCPSocket(), response.Data(), response.Size() );
+							(*client)->TCPSend( response );
 						}
 						else if( recvd->Type() == PT_MOVE )
 						{
@@ -371,6 +385,30 @@ void udp_send_all_except( Uint8 ID, const BasePacket& packet )
 void udp_send_to( Uint8 ID, const BasePacket& packet )
 {
 	get_client( ID )->UDPSend( packet );
+}
+
+void tcp_send_all( const BasePacket& packet )
+{
+		for( auto& client : clients )
+		{
+			client->TCPSend( packet );
+		}
+}
+
+void tcp_send_all_except( Uint8 ID, const BasePacket& packet )
+{
+	for( auto& client : clients)
+	{
+		if( client->GetID() != ID)
+		{
+			client->TCPSend( packet );
+		}
+	}
+}
+
+void tcp_send_to( Uint8 ID, const BasePacket& packet )
+{
+	get_client( ID )->TCPSend( packet );
 }
 
 Uint8 get_availible_id()
