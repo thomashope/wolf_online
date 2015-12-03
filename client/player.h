@@ -1,7 +1,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <SDL2\SDL.h>
+#include <SDL2/SDL.h>
 #include "../shared/vec2.h"
 
 // Foward Declarations
@@ -18,7 +18,7 @@ public:
 
 	// true if the player has moved enough that it's worth telling the server
 	bool SignificantMove();
-	
+
 	// creates a packet with the players current data
 	// TODO: use unique_ptr instead of raw ptr
 	BasePacket* GetMovePacket();

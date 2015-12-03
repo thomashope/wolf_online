@@ -58,57 +58,18 @@ void quit(std::string message = "");	// quits libraries and exits the program
 										// pass a string to show an error on exit
 
 int main(int argc, char* argv[])
-{	
+{
 	// Make Sure floats are 4 bytes in size
 	// If not packets will be ill formed
 	SDL_assert(sizeof(float) == 4);
 
 	init(); // Initailise the libraries
-	
-	/*
-	IPaddress address;
-	UDPsocket UDP_server;
-	UDPpacket* UDP_send_packet;
-
-	// Resolve server name
-	if( SDLNet_ResolveHost(&address, SERVERIP, SERVERPORT) == -1 )
-	{
-		fprintf(stderr, "SDLNet_ResolveHost(%s %d): %s\n", SERVERIP, SERVERPORT, SDLNet_GetError());
-		exit(EXIT_FAILURE);
-	}
-	// Open a socket on random port
-	if( !(UDP_server = SDLNet_UDP_Open(0)) )
-	{
-		fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-		exit(EXIT_FAILURE);
-	}
-	//*
-	// Allocate memory for the packet
-	if( !(UDP_send_packet = SDLNet_AllocPacket(128)) )
-	{
-		fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
-		exit(EXIT_FAILURE);
-	}
-
-	// Setup the packet
-	UDP_send_packet->address.host = address.host;	// Set the destination host
-	UDP_send_packet->address.port = address.port;	// Set the destination port
-	UDP_send_packet->len = 10;						// Packet size in bytes
-
-	UDP_send_packet->data[0] = 0;										// Packet Type
-	UDP_send_packet->data[1] = 10;										// OwnerID
-	SDLNet_Write32(floatToUint32(1.2345f), &UDP_send_packet->data[2]);	// X position
-	SDLNet_Write32(floatToUint32(9.8765f), &UDP_send_packet->data[6]);	// Y position
-
-	std::cout << "Sending hello" << std::endl;
-	SDLNet_UDP_Send(UDP_server, -1, UDP_send_packet);
-	*/
 
 	TCPConnection TCP_connection;
 	UDPConnection UDP_connection;
 
 	Uint32 time = 0;			//time of current frame
-	Uint32 oldTime = 0;			//time of previous frame	
+	Uint32 oldTime = 0;			//time of previous frame
 
 	// Initialise SDL and the screen
 	Screen screen( SCREEN_WIDTH, SCREEN_HEIGHT, "wolf_client" );
@@ -118,7 +79,7 @@ int main(int argc, char* argv[])
 
 	World world(&screen);
 	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
-	
+
 	if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
 	{
 		quit("failed to make TCP connection");
@@ -147,7 +108,7 @@ int main(int argc, char* argv[])
 		oldTime = time;
 		time =  SDL_GetTicks();
 		float deltaTime = (time - oldTime) / 1000.0f;
-		
+
 		Vec2 oldpos = player.pos;
 
 		input.PorcessEvents();
@@ -182,10 +143,10 @@ int main(int argc, char* argv[])
 			} byDistance(player.pos);
 
 			std::sort(sprites.begin(), sprites.end(), byDistance);
-			
+
 			// render them in the new order
 			for (auto sprite : sprites)
-			{					  
+			{
 				sprite->Render(player.pos, player.dir, player.plane, ZBuffer);
 			}
 		} */
@@ -198,7 +159,7 @@ int main(int argc, char* argv[])
 		{
 			sprites[0]->SetPos( pos + dir * 1.5f);
 		}*/
-		
+
 		screen.Display();
 
 	} // END OF GAME LOOP

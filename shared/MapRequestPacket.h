@@ -1,5 +1,5 @@
 #ifndef MAP_REQUEST_PACKET_H
-#define MAP_REQUEST_PACKET_N
+#define MAP_REQUEST_PACKET_H
 
 #include "BasePacket.h"
 
