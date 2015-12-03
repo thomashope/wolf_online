@@ -69,6 +69,7 @@ void init();
 
 // checks if any new clients want to join and adds them to the list
 void accept_client();
+Uint8 get_availible_id();
 
 void talk_udp();
 
@@ -78,7 +79,7 @@ void udp_send_to( Uint8 ID, const BasePacket& packet );
 void udp_send_all( const BasePacket& packet );
 void udp_send_all_except( Uint8 ID, const BasePacket& packet);
 
-Client* find_client( Uint8 ID);
+Client* get_client( Uint8 ID );
 
 int main(int argc, char* argv[])
 {
@@ -193,7 +194,7 @@ void accept_client()
 			response.SetResponse(JR_OK);
 
 			// TODO: make ID allocation not broken
-			response.SetGivenID( clients.size() + 10 );
+			response.SetGivenID( get_availible_id() );
 
 			if( SDLNet_TCP_Send( new_socket, response.Data(), response.Size() ) < response.Size() )
 			{
@@ -268,7 +269,7 @@ void talk_udp()
 				HeartbeatPacket* packet = (HeartbeatPacket*)recvd.get( );
 
 				// Set the clients UDP address
-				Client* sender = find_client( packet->GetID() );
+				Client* sender = get_client( packet->GetID() );
 				if( sender )
 				{
 					sender->SetUDPAddress( UDP_packet.address );
@@ -369,10 +370,26 @@ void udp_send_all_except( Uint8 ID, const BasePacket& packet )
 
 void udp_send_to( Uint8 ID, const BasePacket& packet )
 {
-	find_client( ID )->UDPSend( packet );
+	get_client( ID )->UDPSend( packet );
 }
 
-Client* find_client( Uint8 ID )
+Uint8 get_availible_id()
+{
+	Uint8 id = 1;
+	// keep looping until there is no client with that ID
+	while( get_client(id)  )
+	{
+		id++;
+		if( id == 0 )
+		{
+			// if the Uint8 wraps around to zero, give up and return
+			return id;
+		}
+	}
+	return id;
+}
+
+Client* get_client( Uint8 ID )
 {
 	for( auto& client : clients)
 	{
