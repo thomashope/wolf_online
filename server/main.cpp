@@ -1,8 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-
-#include <SDL2/SDL.h>
+#include <thread>
+#include <chrono>
 #include <SDL2/SDL_net.h>
 #undef main // removes SDLs evil define
 
@@ -218,13 +218,13 @@ void accept_client()
 			tcp_send_all_except( playerJoined.GetID(), playerJoined );
 
 			// Tell new client about all other clients
-			std::cout << "Telling " << playerJoined.GetID() << " about ";
+			std::cout << "Telling " << (int)playerJoined.GetID() << " about ";
 			for( int i = 0; i < clients.size(); i++ )
 			{
 				PlayerJoinedPacket currentPlayer( clients[i]->GetID() );
 
 				// dont tell the new client about themselvs
-				//if( clients[i]->GetID() != playerJoined.GetID() )
+				if( clients[i]->GetID() != playerJoined.GetID() )
 					clients.back()->TCPSend( currentPlayer );
 					std::cout << (int)clients[i]->GetID() << ", ";
 			}
@@ -313,11 +313,13 @@ void talk_tcp()
 				// Receive data directly into the universal packet
 				if( SDLNet_TCP_Recv( (*client)->GetTCPSocket(), uniPacket.Data(), uniPacket.Size() ) > 0 )
 				{
-					auto recvd = uniPacket.CreateFromContents();
+					std::unique_ptr<BasePacket> recvd = uniPacket.CreateFromContents();
 
 					// check if its a join request
 					if( recvd )
 					{
+						recvd->Print();
+						/*
 						if( recvd->Type() == PT_MAP_REQUEST )
 						{
 							std::cout << "player asked for map data" << std::endl;
@@ -336,7 +338,7 @@ void talk_tcp()
 						else
 						{
 							std::cout << "TCP type not recognised" << std::endl;
-						}
+						}//*/
 					}
 					else
 					{

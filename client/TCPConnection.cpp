@@ -125,14 +125,57 @@ void TCPConnection::SendPackets()
 	std::cout << "TCP thread closed" << std::endl;
 }
 
-	std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
+std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 {
 	SDLNet_CheckSockets( socket_set_, 0 );
 
 	if( SDLNet_SocketReady( socket_ ) )
 	{
-		if( SDLNet_TCP_Recv( socket_, packet_.Data(), packet_.Size() ) > 0 )
+		//if( SDLNet_TCP_Recv( socket_, packet_.Data( ), packet_.Size( ) ) > 0 )
+		// read the first byte
+		if( SDLNet_TCP_Recv( socket_, packet_.Data(), 1 ) > 0 )
 		{
+			//*
+			int bytesRemaining;
+			switch( *packet_.Data() )
+			{
+			case PT_HEARTBEAT:
+				bytesRemaining = HEARTBEAT_PACKET_SIZE - 1;
+				break;
+			case PT_JOIN_REQUEST:
+				bytesRemaining = JOINREQUEST_PACKET_SIZE - 1;
+				break;
+			case PT_JOIN_RESPONSE:
+				bytesRemaining = JOINRESPONSE_PACKET_SIZE - 1;
+				break;
+			case PT_MAP_REQUEST:
+				bytesRemaining = MAPREQUST_PACKET_SIZE - 1;
+				break;
+			case PT_MAP_RESPONSE:
+				bytesRemaining = MAPRESPONSE_PACKET_SIZE - 1;
+				break;
+			case PT_MOVE:
+				bytesRemaining = MOVE_PACKET_SIZE - 1;
+				break;
+			case PT_PLAYER_JOINED:
+				bytesRemaining = PLAYERJOINED_PACKET_SIZE - 1;
+				break;
+			default:
+				std::cout << "TCP Unknown Packet Size!!!" << std::endl;
+				// TODO: read all the packets from the queue
+				// read the entire buffer
+				bytesRemaining = packet_.Size() - 1;
+				break;
+			}
+			// read the rest of the packet
+			Uint8* packet_contents = packet_.Data();
+			packet_contents++;
+			if( SDLNet_TCP_Recv( socket_, packet_contents, bytesRemaining ) < 0 )
+			{
+				std::cout << "TCP could not get packet contents" << std::endl;
+			}
+			//*/
+
 			std::unique_ptr<BasePacket> recvd = packet_.CreateFromContents();
 			if( recvd )
 			{
