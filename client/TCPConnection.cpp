@@ -54,10 +54,12 @@ bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
 	std::cout << "Established connection, requesting join..." << std::endl;
 
 	JoinRequestPacket request;
-	JoinResponsePacket response;
-
+	request.SetPosition( player.pos );
+	
 	// Ask to join the server
 	SDLNet_TCP_Send( socket_, request.Data(), request.Size() );
+
+	JoinResponsePacket response;
 
 	// read the response
 	//TODO: check return value for errors
@@ -79,6 +81,7 @@ bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
 	// return success
 	return true;
 }
+
 
 void TCPConnection::AttachWorld( World* world )
 {
@@ -198,6 +201,7 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 	}
 }
 
+/*
 void TCPConnection::Read()
 {
 	SDLNet_CheckSockets( socket_set_, 0 );
@@ -257,3 +261,4 @@ void TCPConnection::Read()
 		SDLNet_CheckSockets( socket_set_, 0 );
 	}
 }
+*/

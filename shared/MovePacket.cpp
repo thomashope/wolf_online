@@ -51,7 +51,7 @@ float MovePacket::GetAngle() const
 
 void MovePacket::Print() const
 {
-	std::cout << "ID: " << GetID()
+	std::cout << "ID: " << (int)GetID()
 		<< " Pos: " << GetPosition().x << " " << GetPosition().y
 		<< " Vel: " << GetVelocity().x << " " << GetVelocity().y
 		<< " Deg: " << GetAngle() << std::endl;

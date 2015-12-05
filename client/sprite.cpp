@@ -20,7 +20,7 @@ void Sprite::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode b
 	texture_ = new Texture(ren, filePath, blendmode);
 }
 
-void Sprite::Render(Vec2 cameraPos, Vec2 cameraDir, Vec2 cameraPlane, WallDepthInfo* zBuffer)
+void Sprite::Render(Vec2 cameraPos, Vec2 cameraDir, Vec2 cameraPlane, DepthBuffer* zBuffer)
 {
 	SetTransform(cameraPos, cameraDir, cameraPlane);
 

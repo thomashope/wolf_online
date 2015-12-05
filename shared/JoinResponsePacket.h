@@ -16,18 +16,14 @@ enum JoinResponse {
 
 class JoinResponsePacket : public BasePacket {
 public:
-	JoinResponsePacket() : BasePacket(PT_JOIN_RESPONSE, JOINRESPONSE_PACKET_SIZE)
-	{
-	}
-	~JoinResponsePacket()
-	{
-	}
+	JoinResponsePacket() : BasePacket(PT_JOIN_RESPONSE, JOINRESPONSE_PACKET_SIZE) {}
+	~JoinResponsePacket() {}
 
 	void SetResponse( JoinResponse jr ) { data_[1] = jr; }
 	void SetGivenID( Uint8 ID ) { data_[2] = ID; }
 
-	JoinResponse GetResponse( ) const { return (JoinResponse)data_[1]; }
-	Uint8 GetGivenID( ) const { return (Uint8)data_[2]; }
+	JoinResponse GetResponse() const { return (JoinResponse)data_[1]; }
+	Uint8 GetGivenID() const { return (Uint8)data_[2]; }
 };
 
 #endif

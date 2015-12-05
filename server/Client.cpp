@@ -23,6 +23,10 @@ void Client::TCPSend( const BasePacket& packet )
 
 void Client::UDPSend( const BasePacket& packet )
 {
+	// if the client hasn't received a udp packet yet, they don't know where to send them
+	// drop attempts to send untill the server recvs a udp from them
+	if( !hasUDPAddress_ ) return;
+
 	UDPpacket_.data = packet.Data();
 	UDPpacket_.len = packet.Size();
 	UDPpacket_.maxlen = packet.Size();

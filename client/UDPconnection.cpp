@@ -78,7 +78,6 @@ void UDPConnection::SendPackets()
 	{
 		if( !packet_queue_.empty() )
 		{
-
 			// protect the queue
 			queue_mtx_.lock();
 
@@ -105,6 +104,24 @@ void UDPConnection::SendPackets()
 	std::cout << "UDP thread closed" << std::endl;
 }
 
+std::unique_ptr<BasePacket> UDPConnection::GetNextPacket()
+{
+	UDPpacket SDLpacket;
+	// join the SDLpackt to the universal packet
+	SDLpacket.data = packet_.Data( );
+	SDLpacket.maxlen = packet_.Size( );
+
+	if( SDLNet_UDP_Recv( socket_, &SDLpacket ) )
+	{
+		return packet_.CreateFromContents();
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+/*
 void UDPConnection::Read()
 {
 	UDPpacket SDLpacket;
@@ -137,3 +154,4 @@ void UDPConnection::Read()
 		}
 	}
 }
+*/

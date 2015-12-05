@@ -4,6 +4,8 @@
 #include "TCPConnection.h"
 #include "UDPConnection.h"
 
+#include <queue>
+
 class Connection
 {
 public:
@@ -22,11 +24,15 @@ public:
   // Pulls all pending packets and adds them to the queue
   void Read();
 
+  bool PollPacket( std::unique_ptr<BasePacket>& packet );
+
 private:
   TCPConnection tcp_conn_;
   UDPConnection udp_conn_;
   bool tcp_good_;
   bool udp_good_;
+
+  std::queue< std::unique_ptr<BasePacket> > packet_queue_;
 };
 
 #endif

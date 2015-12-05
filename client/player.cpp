@@ -1,6 +1,7 @@
 #include "player.h"
 #include "world.h"
 #include "input.h"
+#include "../shared/MovePacket.h"
 
 Player::Player() :
 pos( 2.0f, 2.0f ),
@@ -58,4 +59,38 @@ void Player::Update( const World& world, const Input& input, float deltaTime )
 		dir = dir.rotate( rotation );
 		plane = plane.rotate( rotation );
 	}
+}
+
+bool Player::MovedSignificantly()
+{
+	static Vec2 lastPos = pos;
+
+	if( timeSinceLastMove_ - SDL_GetTicks() > 1000 &&
+		pos.x != lastPos.x )
+	{
+		lastPos = pos;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
+	//TODO
+	// if enough time has passed min, max
+	// they have moved a bit
+	// they have rotated quite a bit (45* at least ?) 
+}
+
+BasePacket* Player::GetMovePacket()
+{
+	timeSinceLastMove_ = SDL_GetTicks();
+
+	MovePacket* mp = new MovePacket();
+	mp->SetID( ID );
+	mp->SetPosition( pos );
+	//TODO: mp->SetVelocity(
+	//TODO: mp->SetAngle(
+
+	return (BasePacket*)mp;
 }

@@ -25,7 +25,9 @@ public:
 	// Create a thread that sends packets as soon as they are added to the queue
 	void StartSenderThread();
 
-	void Read();
+	//void Read();
+
+	std::unique_ptr<BasePacket> GetNextPacket();
 
 private:
 	IPaddress address_;

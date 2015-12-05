@@ -3,13 +3,7 @@
 
 #include "../shared/vec2.h"
 #include "texture.h"
-
-// Put this in a screen class?
-struct WallDepthInfo {
-	int top, bottom;
-	double perpDist;
-	double depth;
-};
+#include "screen.h"
 
 class Sprite {
 public:
@@ -17,9 +11,8 @@ public:
 	virtual ~Sprite() { if (texture_) delete texture_; }
 
 	void SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode blendmode = SDL_BLENDMODE_NONE);
-
-
-	void Render(Vec2 cameraPos, Vec2 cameraDir, Vec2 cameraPlane, WallDepthInfo* zBuffer);
+	
+	void Render( Vec2 cameraPos, Vec2 cameraDir, Vec2 cameraPlane, DepthBuffer* zBuffer );
 
 	// distance betwee the given point and the sprite
 	float Distance(Vec2 point) const;

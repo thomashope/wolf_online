@@ -49,13 +49,6 @@ char mapData[MAP_WIDTH * MAP_HEGIHT] =
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-/*
-struct Client {
-	TCPsocket tcp_sock;
-	UDPsocket udp_sock;
-	int ID;
-};*/
-
 std::vector< std::unique_ptr<Client> > clients;
 
 IPaddress address;
@@ -192,7 +185,7 @@ void accept_client()
 		}
 
 		// if there is space on the server
-		if (clients.size() < MAX_CLIENTS)
+		if( clients.size() < MAX_CLIENTS )
 		{
 			// respon with OK
 			JoinResponsePacket response;
@@ -215,13 +208,16 @@ void accept_client()
 
 			// Tell other clients new client joined
 			PlayerJoinedPacket playerJoined( clients.back()->GetID() );
+			playerJoined.SetPosition( joinRequest.GetPosition() );
 			tcp_send_all_except( playerJoined.GetID(), playerJoined );
 
 			// Tell new client about all other clients
 			std::cout << "Telling " << (int)playerJoined.GetID() << " about ";
 			for( int i = 0; i < clients.size(); i++ )
 			{
-				PlayerJoinedPacket currentPlayer( clients[i]->GetID() );
+				PlayerJoinedPacket currentPlayer( clients[i]->GetID( ) );
+				//TODO: store the players last know position
+				playerJoined.SetPosition( Vec2( 2.0f, 2.0f) );
 
 				// dont tell the new client about themselvs
 				if( clients[i]->GetID() != playerJoined.GetID() )
@@ -270,27 +266,24 @@ void talk_udp()
 			{
 				MovePacket* packet = (MovePacket*)recvd.get( );
 
-				std::cout << "ID: " << (int)packet->GetID()
-					<< " x: " << packet->GetPosition().x
-					<< " y: " << packet->GetPosition().y << std::endl;
-
 				udp_send_all_except( packet->GetID(), *packet );
 			}
 			else if( recvd->Type() == PT_HEARTBEAT )
 			{
 				HeartbeatPacket* packet = (HeartbeatPacket*)recvd.get( );
 
-				std::cout << "ID: " << (int)packet->GetID() << " sent heartbeat" << std::endl;
+				recvd->Print();
 
-				// // Set the clients UDP address
-				// Client* sender = get_client( packet->GetID() );
-				// if( sender )
-				// {
-				// 	sender->SetUDPAddress( UDP_packet.address );
-				// }
+				// Set the clients UDP address
+				Client* sender = get_client( packet->GetID() );
+				if( sender )
+				{
+					sender->SetUDPAddress( UDP_packet.address );
+				}
 			}
 			else
 			{
+				recvd->Print( );
 				std::cout << "UDP type not recognised" << std::endl;
 			}
 		}
@@ -318,8 +311,9 @@ void talk_tcp()
 					// check if its a join request
 					if( recvd )
 					{
+						// print to console whe the packe is recvd
 						recvd->Print();
-						/*
+						
 						if( recvd->Type() == PT_MAP_REQUEST )
 						{
 							std::cout << "player asked for map data" << std::endl;

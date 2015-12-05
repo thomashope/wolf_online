@@ -24,7 +24,7 @@ public:
 	bool Connect(Player& player, std::string host, Uint16 port);
 
 	// returns true if the server sent the map successfully, or false if there was an error
-	void AttachWorld( World*	 world );
+	void AttachWorld( World*  world );
 
 	// adds a packet to the queue
 	void QueuePacket( BasePacket* packet );
@@ -32,8 +32,9 @@ public:
 	// creates a thread that sends packets as soon as they are added to the queue
 	void StartSenderThread();
 
-	void Read();
+	//void Read();
 
+	// Receives the single next packet from the network
 	std::unique_ptr<BasePacket> GetNextPacket();
 
 private:

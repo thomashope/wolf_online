@@ -17,7 +17,7 @@ public:
 	void Update( const World& world, const Input& input, float deltaTime );
 
 	// true if the player has moved enough that it's worth telling the server
-	bool SignificantMove();
+	bool MovedSignificantly();
 
 	// creates a packet with the players current data
 	// TODO: use unique_ptr instead of raw ptr
@@ -32,6 +32,8 @@ public:
 private:
 	float moveSpeed_;
 	float rotSpeed_;
+
+	Uint32 timeSinceLastMove_;
 };
 
 #endif

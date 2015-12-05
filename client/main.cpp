@@ -10,7 +10,8 @@
 #include "Connection.h"
 #include "../shared/MovePacket.h"
 #include "../shared/HeartbeatPacket.h"
-#include "../shared/MapRequestPacket.h"
+#include "../shared/PlayerJoinedPacket.h"
+#include "../shared/MapResponsePacket.h"
 using namespace InstantCG;
 
 #define SCREEN_WIDTH 640
@@ -22,34 +23,35 @@ using namespace InstantCG;
 #define SERVERPORT 1177
 
 Player player;
+std::vector<Sprite> sprites;
 
-std::queue<BasePacket*> packet_queue;
+//std::queue<BasePacket*> packet_queue;
 
 char mapData[MAP_WIDTH * MAP_HEGIHT] =
 {
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,2,2,0,0,0,0,0,0,0,0,0,3,0,3,0,3,0,0,0,1,
-  1,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,3,0,0,0,1,
-  1,3,3,3,0,0,3,3,3,3,0,0,0,0,0,2,0,0,0,2,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,3,0,3,0,0,0,1,
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,3,3,3,3,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,4,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 };
 
@@ -79,7 +81,9 @@ int main(int argc, char* argv[])
 	World world(&screen);
 	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
 
-  server.Connect( player, world, SERVERIP, SERVERPORT );
+	server.Connect( player, world, SERVERIP, SERVERPORT );
+	server.UDPSend( new HeartbeatPacket( player.ID ) );
+
 	// if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
 	// {
 	// 	quit("failed to make TCP connection");
@@ -122,57 +126,68 @@ int main(int argc, char* argv[])
 
 		Vec2 newpos = player.pos;
 
-		if( oldpos.x != newpos.x )
-		{
-			MovePacket* movpac = new MovePacket();
-			movpac->SetID( player.ID );
-			movpac->SetPosition( newpos );
-
-			server.TCPSend( movpac );
+		if( player.MovedSignificantly( ) )
+		{			
+			server.UDPSend( player.GetMovePacket() );
 		}
 
-		// print all packets received
-		//UDP_connection.Read();
+		server.Read();
+				
+		std::unique_ptr<BasePacket> recvd;
+		while( server.PollPacket( recvd ) )
+		{
+			if( recvd->Type() == PT_MOVE )
+			{
+				recvd->Print();
 
-    server.Read();
+				MovePacket* p = (MovePacket*)recvd.get();
 
-		/* // Render The Sprites
+				sprites.back().SetPos( p->GetPosition() );
+				//sprites[0].SetPos( player.pos + Vec2( 2.0f, 2.0f ) );
+			}
+			else if( recvd->Type() == PT_PLAYER_JOINED )
+			{
+				PlayerJoinedPacket* p = (PlayerJoinedPacket*)recvd.get();
+
+				sprites.push_back( Sprite( p->GetPosition().x, p->GetPosition().y ) );
+				sprites.back().SetTexture( screen.GetRenderer(), "../../resources/sprite_1.bmp", SDL_BLENDMODE_BLEND );
+			}
+			else if( recvd->Type() == PT_MAP_RESPONSE )
+			{
+				MapResponsePacket* p = (MapResponsePacket*)recvd.get();
+
+				//TODO: the player shouldn't be able to start untill they have the map
+				world.SetMap( (char*)p->Data(), p->Width(), p->Height() );
+			}
+			else
+			{
+				recvd->Print();
+			}
+		}
+
+		//* Render The Sprites
 		{
 			// sort the sprites so the are drawn from back to front
 			struct ByDistance {
 				ByDistance(Vec2 to):to_(to){}
 				Vec2 to_;
-				bool operator() (Sprite* a, Sprite* b) {
-					return (a->Distance(to_) > b->Distance(to_));
+				bool operator() (Sprite& a, Sprite& b) {
+					return (a.Distance(to_) > b.Distance(to_));
 				}
 			} byDistance(player.pos);
 
 			std::sort(sprites.begin(), sprites.end(), byDistance);
 
 			// render them in the new order
-			for (auto sprite : sprites)
+			for (auto& sprite : sprites)
 			{
-				sprite->Render(player.pos, player.dir, player.plane, ZBuffer);
+				sprite.Render(player.pos, player.dir, player.plane, screen.GetDepthBuffer());
 			}
-		} */
-
-		/*
-		int mouseX, mouseY;
-		bool mouseL, mouseR;
-		getMouseState(mouseX, mouseY, mouseL, mouseR);
-		if (mouseL)
-		{
-			sprites[0]->SetPos( pos + dir * 1.5f);
-		}*/
+		} //*/
 
 		screen.Display();
 
 	} // END OF GAME LOOP
-
-	// clean up
-	//for (auto sprite : sprites) {
-	//	delete sprite;
-	//}
 
 	// cleanup
 	SDLNet_Quit();

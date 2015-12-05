@@ -10,12 +10,8 @@
 class MapResponsePacket : public BasePacket
 {
 public:
-	MapResponsePacket() : BasePacket(PT_MAP_RESPONSE, MAPRESPONSE_PACKET_SIZE)
-	{
-	}
-	~MapResponsePacket()
-	{
-	}
+	MapResponsePacket() : BasePacket(PT_MAP_RESPONSE, MAPRESPONSE_PACKET_SIZE) {}
+	~MapResponsePacket() {}
 
 	// copy the 24*24 map data into the packet
 	void SetMapData(char* data) {
@@ -26,6 +22,10 @@ public:
 
 	unsigned int Width() const { return 24; }
 	unsigned int Height() const { return 24; }
+
+	void Print() const override {
+		std::cout << "Recvd map data of Width " << Width() << " and Height " << Height() << std::endl;
+	}
 };
 
 #endif

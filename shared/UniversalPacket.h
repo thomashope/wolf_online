@@ -5,17 +5,16 @@
 #include <SDL2/SDL.h>
 class BasePacket;
 
-#define UNIVERSAL_PACKET_SIZE 512
+// Must be larger than the largest packet that will be recvd
+#define UNIVERSAL_PACKET_SIZE 640
 
 class UniversalPacket
 {
 public:
-
 	UniversalPacket() :
 		size_(UNIVERSAL_PACKET_SIZE),
 		data_(new Uint8[UNIVERSAL_PACKET_SIZE]())
-	{
-	}
+	{}
 
 	~UniversalPacket() {}
 

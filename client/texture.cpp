@@ -47,7 +47,7 @@ texture_(nullptr)
 
 Texture::~Texture()
 {
-	if (texture_)
+	if( texture_ != nullptr )
 	{
 		SDL_DestroyTexture(texture_);
 	}
