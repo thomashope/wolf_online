@@ -201,6 +201,7 @@ void accept_client()
 
 			// add the new client to the vector
 			clients.push_back( std::unique_ptr<Client>(new Client( response.GetGivenID(), new_socket, UDP_socket )) );
+			clients.back()->SetPosition( joinRequest.GetPosition() );
 
 			// Add the new client to the socket set
 			SDLNet_TCP_AddSocket( TCP_SocketSet, clients.back()->GetTCPSocket() );
@@ -217,12 +218,14 @@ void accept_client()
 			{
 				PlayerJoinedPacket currentPlayer( clients[i]->GetID( ) );
 				//TODO: store the players last know position
-				playerJoined.SetPosition( Vec2( 2.0f, 2.0f) );
+				playerJoined.SetPosition( clients[i]->GetPosition() );
 
 				// dont tell the new client about themselvs
 				if( clients[i]->GetID() != playerJoined.GetID() )
+				{
 					clients.back()->TCPSend( currentPlayer );
 					std::cout << (int)clients[i]->GetID() << ", ";
+				}
 			}
 			std::cout << std::endl;
 
@@ -266,6 +269,10 @@ void talk_udp()
 			{
 				MovePacket* packet = (MovePacket*)recvd.get( );
 
+				// update the servers copy of the client
+				get_client( packet->GetID() )->SetPosition( packet->GetPosition() );
+
+				// tell all the other clients
 				udp_send_all_except( packet->GetID(), *packet );
 			}
 			else if( recvd->Type() == PT_HEARTBEAT )
@@ -283,7 +290,7 @@ void talk_udp()
 			}
 			else
 			{
-				recvd->Print( );
+				recvd->Print();
 				std::cout << "UDP type not recognised" << std::endl;
 			}
 		}

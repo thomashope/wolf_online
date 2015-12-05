@@ -4,6 +4,7 @@
 #include <SDL2/SDL_net.h>
 #include <memory>
 #include "../shared/BasePacket.h"
+#include "../shared/vec2.h"
 
 class Client
 {
@@ -18,9 +19,12 @@ public:
 
 	// set the destination for UDP packets bound for this client
 	void SetUDPAddress( IPaddress address );
+	void SetPosition( Vec2 position ) { position_ = position; }
 
 	TCPsocket GetTCPSocket() { return TCPsocket_; }
 	Uint8 GetID() { return ID_; }
+	Vec2 GetPosition() { return position_; }
+
 	bool NeedsUDPAddress() { return !hasUDPAddress_; }
 
 private:
@@ -29,6 +33,8 @@ private:
 	UDPpacket UDPpacket_;
 	bool hasUDPAddress_;
 	Uint8 ID_;
+
+	Vec2 position_;
 };
 
 #endif

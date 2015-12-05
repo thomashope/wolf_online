@@ -136,14 +136,13 @@ int main(int argc, char* argv[])
 		std::unique_ptr<BasePacket> recvd;
 		while( server.PollPacket( recvd ) )
 		{
+			//recvd->Print();
+
 			if( recvd->Type() == PT_MOVE )
 			{
-				recvd->Print();
-
 				MovePacket* p = (MovePacket*)recvd.get();
 
 				sprites.back().SetPos( p->GetPosition() );
-				//sprites[0].SetPos( player.pos + Vec2( 2.0f, 2.0f ) );
 			}
 			else if( recvd->Type() == PT_PLAYER_JOINED )
 			{
@@ -158,10 +157,6 @@ int main(int argc, char* argv[])
 
 				//TODO: the player shouldn't be able to start untill they have the map
 				world.SetMap( (char*)p->Data(), p->Width(), p->Height() );
-			}
-			else
-			{
-				recvd->Print();
 			}
 		}
 
