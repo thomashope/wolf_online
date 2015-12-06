@@ -12,12 +12,12 @@
 
 class World {
 public:
-	World(Screen* screen);
+	World( Screen& screen, int width, int height );
 	~World();
 
-	void Render(const Player& player);
+	void Render( const Player& player );
 
-	inline char GetGrid( int x, int y ) const { return map_[y * height_ + x]; }
+	char GetGrid( int x, int y ) const;
 
 	void SetMap( char* map, int width, int height );
 

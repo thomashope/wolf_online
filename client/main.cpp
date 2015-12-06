@@ -25,37 +25,8 @@ using namespace InstantCG;
 Player player;
 std::vector<Sprite> sprites;
 
-//std::queue<BasePacket*> packet_queue;
-
-char mapData[MAP_WIDTH * MAP_HEGIHT] =
-{
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
-};
-
-void init(); // initalises libraries
+void render_enemies( Screen& screen );	// draws all the current enemies in the world
+void init();							// initalises libraries
 void quit(std::string message = "");	// quits libraries and exits the program
 										// pass a string to show an error on exit
 
@@ -76,29 +47,12 @@ int main(int argc, char* argv[])
 	Screen screen( SCREEN_WIDTH, SCREEN_HEIGHT, "wolf_client" );
 	Input input;						// init the input handler
 	player.pos.set(22.0f, 12.0f);		// x and y start position
-	//bool sendPosition = false;	//
 
-	World world(&screen);
-	world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
+	World world( screen, MAP_WIDTH, MAP_HEGIHT );
+	//world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
 
 	server.Connect( player, world, SERVERIP, SERVERPORT );
 	server.UDPSend( new HeartbeatPacket( player.ID ) );
-
-	// if( !TCP_connection.Connect( player, SERVERIP, SERVERPORT ) )
-	// {
-	// 	quit("failed to make TCP connection");
-	// }
-	// TCP_connection.RequestMapData( world );
-	// TCP_connection.StartSenderThread();
-  // TCP_connection.QueuePacket( new MapRequestPacket() );
-  //
-	// if( !UDP_connection.Connect( SERVERIP, SERVERPORT ) )
-	// {
-	// 	quit( "failed to make UDP connection" );
-	// }
-	// UDP_connection.StartSenderThread();
-
-  //UDP_connection.QueuePacket( new HeartbeatPacket( player.ID ) );
 
 	//std::vector<Sprite*> sprites;
 	//sprites.push_back(new Sprite(16, 16));
@@ -160,25 +114,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		//* Render The Sprites
-		{
-			// sort the sprites so the are drawn from back to front
-			struct ByDistance {
-				ByDistance(Vec2 to):to_(to){}
-				Vec2 to_;
-				bool operator() (Sprite& a, Sprite& b) {
-					return (a.Distance(to_) > b.Distance(to_));
-				}
-			} byDistance(player.pos);
-
-			std::sort(sprites.begin(), sprites.end(), byDistance);
-
-			// render them in the new order
-			for (auto& sprite : sprites)
-			{
-				sprite.Render(player.pos, player.dir, player.plane, screen.GetDepthBuffer());
-			}
-		} //*/
+		render_enemies( screen );
 
 		screen.Display();
 
@@ -188,6 +124,28 @@ int main(int argc, char* argv[])
 	SDLNet_Quit();
 	SDL_Quit();
 	return 0;
+}
+
+void render_enemies( Screen& screen )
+{
+	{
+		// sort the sprites so the are drawn from back to front
+		struct ByDistance {
+			ByDistance( Vec2 to ) :to_( to ){}
+			Vec2 to_;
+			bool operator() ( Sprite& a, Sprite& b ) {
+				return (a.Distance( to_ ) > b.Distance( to_ ));
+			}
+		} byDistance( player.pos );
+
+		std::sort( sprites.begin( ), sprites.end( ), byDistance );
+
+		// render them in the new order
+		for( auto& sprite : sprites )
+		{
+			sprite.Render( player.pos, player.dir, player.plane, screen.GetDepthBuffer( ) );
+		}
+	}
 }
 
 void init()

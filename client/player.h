@@ -29,7 +29,14 @@ public:
 
 	Uint8 ID;		// Used to distinguish between players
 					// The sever will allocate an ID on conneciton
+
+	Vec2 GetVelocity() { return vel_; }
+	
+
 private:
+
+	Vec2 vel_;
+
 	float moveSpeed_;
 	float rotSpeed_;
 

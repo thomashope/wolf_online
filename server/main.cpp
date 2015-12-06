@@ -38,7 +38,7 @@ char mapData[MAP_WIDTH * MAP_HEGIHT] =
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-	1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 3, 3, 3, 3, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	1, 0, 0, 0, 0, 0, 4, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -83,7 +83,6 @@ int main(int argc, char* argv[])
 {
 	init();
 
-
 	/* Main loop */
 	bool quit = false;
 	while( !quit )
@@ -94,15 +93,15 @@ int main(int argc, char* argv[])
 		// try to accept new clients
 		accept_client();
 
-		talk_udp( );
+		talk_udp();
 
 		talk_tcp();
 	}
 
 	// cleanup
 	SDLNet_FreeSocketSet( TCP_SocketSet );
-	SDLNet_Quit( );
-	SDL_Quit( );
+	SDLNet_Quit();
+	SDL_Quit();
 	return 0;
 }
 
@@ -267,6 +266,8 @@ void talk_udp()
 		{
 			if( recvd->Type() == PT_MOVE )
 			{
+				recvd->Print();
+
 				MovePacket* packet = (MovePacket*)recvd.get( );
 
 				// update the servers copy of the client

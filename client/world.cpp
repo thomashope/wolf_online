@@ -1,9 +1,9 @@
 #include "world.h"
 
-World::World(Screen* screen) :
-width_( 0 ),
-height_( 0 ),
-screen_( screen )
+World::World( Screen& screen, int width, int height) :
+width_( width ),
+height_( height ),
+screen_( &screen )
 {
 	std::string projectPath;
 	//SDL_GetBasePath will return NULL if something went wrong in retrieving the path
@@ -13,6 +13,17 @@ screen_( screen )
 		SDL_free( basePath );
 	} else {
 		std::cerr << "Error getting resource path: " << SDL_GetError() << std::endl;
+	}
+
+	// Create a default empty map
+	map_.clear();
+	for( int x = 0; x < width_; x++ )
+	for( int y = 0; y < height_; y++ )
+	{
+		if( x == 0 || x == width_ - 1 || y == 0 || y == height_ - 1 )
+			map_.push_back( 1 );
+		else
+			map_.push_back( 0 );
 	}
 
 #if defined(_WIN32)
@@ -48,6 +59,9 @@ void World::SetMap( char* map, int width, int height )
 	width_ = width;
 	height_ = height;
 
+	// throw away any data already in the vector
+	map_.clear();
+
 	// ensure the vector has enough space for the map
 	map_.resize( width_ * height_, 0 );
 
@@ -56,6 +70,18 @@ void World::SetMap( char* map, int width, int height )
 	{
 		map_[i] = map[i];
 	}
+}
+
+char World::GetGrid(int x, int y) const
+{
+	int clipped = y * height_ + x;
+	if( clipped < 0 ) {
+		clipped = 0;
+	} else if ( clipped > width_ * height_ ) {
+		clipped = width_ * height_;
+	}
+
+	return map_[clipped];
 }
 
 void World::Render(const Player& player)

@@ -16,37 +16,39 @@ void Player::Update( const World& world, const Input& input, float deltaTime )
 {
 	float speed = moveSpeed_ * deltaTime;
 	float rotation = rotSpeed_ * deltaTime;
-	if( input.XMotion( ) > 0 ) rotation *= input.XMotion( ) *  0.2f;
-	else if( input.XMotion( ) < 0 ) rotation *= input.XMotion( ) * -0.2f;
+	if( input.XMotion() > 0 ) rotation *= input.XMotion() *  0.2f;
+	else if( input.XMotion() < 0 ) rotation *= input.XMotion() * -0.2f;
+
+	Vec2 OldPos = pos;
 
 	//strafe to the right
 	if( input.KeyDown( SDL_SCANCODE_D ) )
 	{
 		if( world.GetGrid( int( pos.x + dir.y * speed ), int( pos.y ) ) == false ) pos.x += dir.y * speed;
 		if( world.GetGrid( int( pos.x ), int( pos.y + -dir.x * speed ) ) == false ) pos.y += -dir.x * speed;
-		//sendPosition = true;
 	}
 	//strafe to the left
 	if( input.KeyDown( SDL_SCANCODE_A ) )
 	{
 		if( world.GetGrid( int( pos.x + -dir.y * speed ), int( pos.y ) ) == false ) pos.x += -dir.y * speed;
 		if( world.GetGrid( int( pos.x ), int( pos.y + dir.x * speed ) ) == false )  pos.y += dir.x * speed;
-		//sendPosition = true;
 	}
 	//move forward if no wall in front of you
 	if( input.KeyDown( SDL_SCANCODE_W ) )
 	{
 		if( world.GetGrid( int( pos.x + dir.x * speed ), int( pos.y ) ) == false ) pos.x += dir.x * speed;
 		if( world.GetGrid( int( pos.x ), int( pos.y + dir.y * speed ) ) == false ) pos.y += dir.y * speed;
-		//sendPosition = true;
 	}
 	//move backwards if no wall behind you
 	if( input.KeyDown( SDL_SCANCODE_S ) )
 	{
 		if( world.GetGrid( int( pos.x - dir.x * speed ), int( pos.y ) ) == false ) pos.x -= dir.x * speed;
 		if( world.GetGrid( int( pos.x ), int( pos.y - dir.y * speed ) ) == false ) pos.y -= dir.y * speed;
-		//sendPosition = true;
 	}
+
+	// The velocity if the difference between the new and old position
+	vel_ = pos - OldPos;
+
 	//rotate to the right
 	if( input.XMotion() > 0 )
 	{
@@ -89,7 +91,7 @@ BasePacket* Player::GetMovePacket()
 	MovePacket* mp = new MovePacket();
 	mp->SetID( ID );
 	mp->SetPosition( pos );
-	//TODO: mp->SetVelocity(
+	mp->SetVelocity( vel_ );
 	//TODO: mp->SetAngle(
 
 	return (BasePacket*)mp;
