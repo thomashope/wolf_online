@@ -20,7 +20,7 @@ public:
 	bool MovedSignificantly();
 
 	// creates a packet with the players current data
-	// TODO: use unique_ptr instead of raw ptr
+	// TODO: use unique_ptr instead of raw ptr, untill then caller should delete the packet
 	BasePacket* GetMovePacket();
 
 	Vec2 pos;		// x and y start position
@@ -30,11 +30,9 @@ public:
 	Uint8 ID;		// Used to distinguish between players
 					// The sever will allocate an ID on conneciton
 
-	Vec2 GetVelocity() { return vel_; }
-	
+	Vec2 GetVelocity() { return vel_; }	
 
 private:
-
 	Vec2 vel_;
 
 	float moveSpeed_;

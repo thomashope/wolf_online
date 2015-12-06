@@ -25,11 +25,11 @@ depthBuffer_(nullptr )
 
 	// create the renderer
 	renderer_ = SDL_CreateRenderer( window_, -1,
-		SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE );
+		SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE | SDL_RENDERER_PRESENTVSYNC );
 	// check for errors
 	if( renderer_ == NULL )
 	{
-		std::cout << "Renderer error: " << SDL_GetError( ) << std::endl;
+		std::cout << "Renderer error: " << SDL_GetError() << std::endl;
 		SDL_Quit();
 		std::exit( 1 );
 	}

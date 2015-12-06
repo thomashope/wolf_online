@@ -47,7 +47,9 @@ void Player::Update( const World& world, const Input& input, float deltaTime )
 	}
 
 	// The velocity if the difference between the new and old position
+	// per second 
 	vel_ = pos - OldPos;
+	vel_ *= (1.0f / deltaTime);
 
 	//rotate to the right
 	if( input.XMotion() > 0 )
@@ -67,10 +69,8 @@ bool Player::MovedSignificantly()
 {
 	static Vec2 lastPos = pos;
 
-	if( timeSinceLastMove_ - SDL_GetTicks() > 1000 &&
-		pos.x != lastPos.x )
+	if( SDL_GetTicks() - timeSinceLastMove_ > 1000 )
 	{
-		lastPos = pos;
 		return true;
 	}
 	else

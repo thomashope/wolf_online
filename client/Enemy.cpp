@@ -1,16 +1,18 @@
 
-#include "sprite.h"
+#include "Enemy.h"
 #include "SDLsetup.h"
+#include "player.h"
 
-Sprite::Sprite(float x, float y) :
-pos_(x, y),
+Enemy::Enemy( Vec2 pos ) :
+pos_(pos.x, pos.y),
+vel_(0, 0),
 scale_(1.0f),
 texture_(nullptr),
 vOffset_(0)
 {
 }
 
-void Sprite::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode blendmode)
+void Enemy::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode blendmode)
 {
 	// delete the current texture if there is one
 	if (texture_) delete texture_;
@@ -20,9 +22,15 @@ void Sprite::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode b
 	texture_ = new Texture(ren, filePath, blendmode);
 }
 
-void Sprite::Render(Vec2 cameraPos, Vec2 cameraDir, Vec2 cameraPlane, DepthBuffer* zBuffer)
+void Enemy::Update( float dt )
 {
-	SetTransform(cameraPos, cameraDir, cameraPlane);
+	
+	pos_ += vel_ * dt;
+}
+
+void Enemy::Render( const Player& player, DepthBuffer* zBuffer)
+{
+	SetTransform( player );
 
 	// spriteScreenX is the xCoord of the centre of the sprite
 	int spriteScreenX = int((SCREEN_WIDTH / 2) * (1 + transform_.x / transform_.y));
@@ -72,40 +80,46 @@ void Sprite::Render(Vec2 cameraPos, Vec2 cameraDir, Vec2 cameraPlane, DepthBuffe
 	}
 }
 
-void Sprite::SetTransform(Vec2 cameraPos, Vec2 cameraDir, Vec2 camerPlane)
+void Enemy::SetTransform( const Player& player )
 {
 	//translate sprite position to relative to camera
-	//float spriteX = sprite.x - cameraPos.x;
-	//float spriteY = sprite.y - cameraPos.y;
-	Vec2 transPos = pos_ - cameraPos;
+	Vec2 transPos = pos_ - player.pos;
 
 	//transform sprite with the inverse camera matrix
-	// [ plane.x   dir.x ] -1                                       [ dir.y      -dir.x ]
-	// [               ]       =  1/(plane.x*dir.y-dir.x*plane.y) *   [                 ]
-	// [ plane.y   dir.y ]                                          [ -plane.y  plane.x ]
+	// [ plane.x   dir.x ] -1                                      [ dir.y      -dir.x ]
+	// [                 ] =  1 / (plane.x *dir.y-dir.x*plane.y) * [                   ]
+	// [ plane.y   dir.y ]                                         [ -plane.y  plane.x ]
 
-	float invDet = 1.0f / (camerPlane.x * cameraDir.y - cameraDir.x * camerPlane.y); //required for correct matrix multiplication
+	float invDet = 1.0f / (player.plane.x * player.dir.y - player.dir.x * player.plane.y); //required for correct matrix multiplication
 
-	transform_.x = invDet * (cameraDir.y * transPos.x - cameraDir.x * transPos.y);
-	transform_.y = invDet * (-camerPlane.y * transPos.x + camerPlane.x * transPos.y); //this is actually the depth inside the screen, that what Z is in 3D   
+	transform_.x = invDet * (player.dir.y * transPos.x - player.dir.x * transPos.y);
+	transform_.y = invDet * (-player.plane.y * transPos.x + player.plane.x * transPos.y); //this is actually the depth inside the screen, that what Z is in 3D   
 }
 
-float Sprite::Distance(Vec2 point) const
+void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> packet )
+{
+	// TODO: check the timestamp for when the move was sent
+	newest_move_ = std::move( packet );
+
+	SetPosition( newest_move_->GetPosition() );
+	SetVelocity( newest_move_->GetVelocity() );
+}
+
+float Enemy::Distance( Vec2 point ) const
 {
 	return (pos_ - point).length();
 }
 
-
-void Sprite::SetScale(float x, float y)
+void Enemy::SetScale( Vec2 s )
 {
 	// ensure scale is not negative
-	if (x < 0) x = 0.0f;
-	if (y < 0) y = 0.0f;
+	if (s.x < 0) s.x = 0.0f;
+	if (s.y < 0) s.y = 0.0f;
 
-	scale_.set(x, y);
+	scale_ = s;
 }
 
-void Sprite::SetOffset(int offset)
+void Enemy::SetOffset( int offset )
 {
 	vOffset_ = offset;
 }

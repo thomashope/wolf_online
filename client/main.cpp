@@ -4,7 +4,7 @@
 #include <SDL2/SDL_net.h>
 
 #include "InstantCG.h"
-#include "sprite.h"
+#include "Enemy.h"
 #include "input.h"
 #include "world.h"
 #include "Connection.h"
@@ -23,12 +23,18 @@ using namespace InstantCG;
 #define SERVERPORT 1177
 
 Player player;
-std::vector<Sprite> sprites;
+std::vector<Enemy*> enemies;
 
-void render_enemies( Screen& screen );	// draws all the current enemies in the world
-void init();							// initalises libraries
-void quit(std::string message = "");	// quits libraries and exits the program
-										// pass a string to show an error on exit
+Uint32 localTime = 0;		// time of current frame
+Uint32 oldTime = 0;			// time of previous frame
+Uint32 globalTime = 0;		// time syncronsied with the server
+
+void new_enemy( Screen& screen, Vec2 pos );	// add a new enemy to the game
+void enemies_render( Screen& screen );		// draws all the current enemies in the world
+void enemies_update( float dt );			// calls update on all the ememies
+void init();								// initalises libraries
+void quit(std::string message = "");		// quits libraries and exits the program
+											// pass a string to show an error on exit
 
 int main(int argc, char* argv[])
 {
@@ -40,37 +46,30 @@ int main(int argc, char* argv[])
 
 	Connection server;
 
-	Uint32 time = 0;			//time of current frame
-	Uint32 oldTime = 0;			//time of previous frame
-
 	// Initialise SDL and the screen
 	Screen screen( SCREEN_WIDTH, SCREEN_HEIGHT, "wolf_client" );
 	Input input;						// init the input handler
 	player.pos.set(22.0f, 12.0f);		// x and y start position
 
 	World world( screen, MAP_WIDTH, MAP_HEGIHT );
-	//world.SetMap( mapData, MAP_WIDTH, MAP_HEGIHT );
 
 	server.Connect( player, world, SERVERIP, SERVERPORT );
 	server.UDPSend( new HeartbeatPacket( player.ID ) );
 
-	//std::vector<Sprite*> sprites;
-	//sprites.push_back(new Sprite(16, 16));
-	//sprites.push_back(new Sprite(20, 16));
-	//sprites.push_back(new Sprite(16, 20));
-	//sprites[0]->SetTexture(ren, "../img/sprite_1.bmp", SDL_BLENDMODE_BLEND);
-	//sprites[1]->SetTexture(ren, "../img/sprite_2.bmp", SDL_BLENDMODE_BLEND);
-	//sprites[2]->SetTexture(ren, "../img/sprite_3.bmp", SDL_BLENDMODE_BLEND);
-	//sprites[2]->SetScale( 0.5f, 0.5f );
+	//enemies.push_back(new Enemy(16, 16));
+	//enemies.push_back(new Enemy(20, 16));
+	//enemies.push_back(new Enemy(16, 20));
+	//enemies[0]->SetTexture(ren, "../img/sprite_1.bmp" );
+	//enemies[1]->SetTexture(ren, "../img/sprite_2.bmp" );
+	//enemies[2]->SetTexture(ren, "../img/sprite_3.bmp" );
+	//enemies[2]->SetScale( 0.5f, 0.5f );
 
 	std::cout << "Starting Game Loop..." << std::endl;
 	while( !input.AskedToQuit() )	// START OF GAME LOOP
 	{
-		oldTime = time;
-		time =  SDL_GetTicks();
-		float deltaTime = (time - oldTime) / 1000.0f;
-
-		Vec2 oldpos = player.pos;
+		oldTime = localTime;
+		localTime = SDL_GetTicks( );
+		float deltaTime = (localTime - oldTime) / 1000.0f;
 
 		input.PorcessEvents();
 
@@ -78,10 +77,8 @@ int main(int argc, char* argv[])
 
 		world.Render( player );
 
-		Vec2 newpos = player.pos;
-
-		if( player.MovedSignificantly( ) )
-		{			
+		if( player.MovedSignificantly() )
+		{
 			server.UDPSend( player.GetMovePacket() );
 		}
 
@@ -94,16 +91,20 @@ int main(int argc, char* argv[])
 
 			if( recvd->Type() == PT_MOVE )
 			{
+				SDL_Rect rect{ 0, 0, 16, 16 };
+				SDL_SetRenderDrawColor( screen.GetRenderer(), 255, 0, 0, 255 );
+				SDL_RenderFillRect( screen.GetRenderer(), &rect );
+
 				MovePacket* p = (MovePacket*)recvd.get();
 
-				sprites.back().SetPos( p->GetPosition() );
+				// cast the recvd basePacket unique_ptr to movePacket and transfer ownership to the relevant enemy
+				enemies.back()->StoreMovePacket( std::unique_ptr<MovePacket>( (MovePacket*)recvd.release() ) );
 			}
 			else if( recvd->Type() == PT_PLAYER_JOINED )
 			{
 				PlayerJoinedPacket* p = (PlayerJoinedPacket*)recvd.get();
 
-				sprites.push_back( Sprite( p->GetPosition().x, p->GetPosition().y ) );
-				sprites.back().SetTexture( screen.GetRenderer(), "../../resources/sprite_1.bmp", SDL_BLENDMODE_BLEND );
+				new_enemy( screen, p->GetPosition() );
 			}
 			else if( recvd->Type() == PT_MAP_RESPONSE )
 			{
@@ -114,37 +115,54 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		render_enemies( screen );
+		enemies_update( deltaTime );
+		enemies_render( screen );
 
 		screen.Display();
 
 	} // END OF GAME LOOP
 
 	// cleanup
+	for( auto& e : enemies ) delete e;
+	enemies.clear();
+
 	SDLNet_Quit();
 	SDL_Quit();
 	return 0;
 }
 
-void render_enemies( Screen& screen )
+void new_enemy( Screen& screen, Vec2 pos )
 {
+	enemies.push_back( new Enemy( pos ) );
+	enemies.back()->SetTexture( screen.GetRenderer(), "../../resources/sprite_1.bmp" );
+}
+
+void enemies_update( float dt )
+{
+	for( auto& e : enemies )
 	{
-		// sort the sprites so the are drawn from back to front
-		struct ByDistance {
-			ByDistance( Vec2 to ) :to_( to ){}
-			Vec2 to_;
-			bool operator() ( Sprite& a, Sprite& b ) {
-				return (a.Distance( to_ ) > b.Distance( to_ ));
-			}
-		} byDistance( player.pos );
+		e->Update( dt );
+	}
+}
 
-		std::sort( sprites.begin( ), sprites.end( ), byDistance );
-
-		// render them in the new order
-		for( auto& sprite : sprites )
-		{
-			sprite.Render( player.pos, player.dir, player.plane, screen.GetDepthBuffer( ) );
+void enemies_render( Screen& screen )
+{
+	// sort the enemies so the are drawn from back to front
+	struct ByDistance {
+		ByDistance( Vec2 to ) :to_( to ){}
+		Vec2 to_;
+		bool operator() ( Enemy* a, Enemy* b ) {
+			return (a->Distance( to_ ) > b->Distance( to_ ));
 		}
+	} byDistance( player.pos );
+
+	// sort the vector so they are drawn from back to front
+	std::sort( enemies.begin(), enemies.end(), byDistance );
+
+	// render them in the new order
+	for( auto& e : enemies )
+	{
+		e->Render( player, screen.GetDepthBuffer() );
 	}
 }
 
