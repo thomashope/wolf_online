@@ -18,7 +18,7 @@ public:
 
 	void SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode blendmode = SDL_BLENDMODE_BLEND);
 	
-	void Update( float dt );
+	void Update( Uint32 time );
 
 	void Render( const Player& player, DepthBuffer* zBuffer );
 
@@ -43,11 +43,12 @@ private:
 	//TODO: pass in a whole camera class
 	void SetTransform( const Player& player );
 
-	Vec2 pos_;			// position
-	Vec2 vel_;			// velocity
+	Vec2 pos_;			// actual displayed position
+	Vec2 vel_;			// actual displayed velocity
 
 	std::unique_ptr<MovePacket> newest_move_;
-	std::unique_ptr<MovePacket> previous_move_;
+	Vec2 old_predicted_pos_;
+	Uint32 old_prediction_time_;
 
 	Vec2 transform_;	// move the sprite to camera space
 	Vec2 scale_;		// x and y scaling of the sprite

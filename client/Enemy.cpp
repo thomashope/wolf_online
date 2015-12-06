@@ -8,7 +8,8 @@ pos_(pos.x, pos.y),
 vel_(0, 0),
 scale_(1.0f),
 texture_(nullptr),
-vOffset_(0)
+vOffset_(0),
+newest_move_(nullptr)
 {
 }
 
@@ -22,10 +23,44 @@ void Enemy::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode bl
 	texture_ = new Texture(ren, filePath, blendmode);
 }
 
-void Enemy::Update( float dt )
+void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> packet )
 {
-	
-	pos_ += vel_ * dt;
+	// TODO: check the timestamp for when the move was sent
+	newest_move_ = std::move( packet );
+
+	// store the curent position and when that prediction was made
+	old_predicted_pos_ = pos_;
+	old_prediction_time_ = SDL_GetTicks(); // TODO: replace with global time?
+}
+
+void Enemy::Update( Uint32 time )
+{
+	if( newest_move_ == nullptr ) return;
+	//TODO: lerp the angle too
+
+	// move to the new position over a fixed time, milliseconds
+	float lerp_duration = 500;
+
+	pos_ = newest_move_->GetPosition();
+		
+	// if less than the lerpDuration has passed, keep lerping
+	if( time - old_prediction_time_ < lerp_duration )
+	{	
+		// how much time has passed since the new packet was received
+		float packet_age = (time - old_prediction_time_) / 1000.0f;
+
+		// predict where the player will be after the fixed time
+		Vec2 predicted_pos = newest_move_->GetPosition( ) + newest_move_->GetVelocity( ) * packet_age;
+
+		// Lerp between the old position and the new prediction
+		pos_ = old_predicted_pos_.lerpTo( predicted_pos, packet_age );
+	}
+	else
+	// the previous packet is too old, ignore it
+	{
+		//TODO: base prediction on absolute of newest packet instead of this relative kind
+		//pos_ = newest_move_->GetVelocity() * (time - newest_move_->GetTime() / 1000.0f);
+	} //*/
 }
 
 void Enemy::Render( const Player& player, DepthBuffer* zBuffer)
@@ -94,15 +129,6 @@ void Enemy::SetTransform( const Player& player )
 
 	transform_.x = invDet * (player.dir.y * transPos.x - player.dir.x * transPos.y);
 	transform_.y = invDet * (-player.plane.y * transPos.x + player.plane.x * transPos.y); //this is actually the depth inside the screen, that what Z is in 3D   
-}
-
-void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> packet )
-{
-	// TODO: check the timestamp for when the move was sent
-	newest_move_ = std::move( packet );
-
-	SetPosition( newest_move_->GetPosition() );
-	SetVelocity( newest_move_->GetVelocity() );
 }
 
 float Enemy::Distance( Vec2 point ) const

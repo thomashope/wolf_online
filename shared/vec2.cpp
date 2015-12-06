@@ -35,6 +35,11 @@ float Vec2::dot(const Vec2& v) const
 	return x*v.x + y*v.y;
 }
 
+Vec2 Vec2::lerpTo( const Vec2& dest, float t )
+{
+	return *this + (dest - *this) * t;
+}
+
 /*
 Vec2 Vec2::cross(const Vec2& v) const
 {

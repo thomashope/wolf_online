@@ -31,7 +31,7 @@ Uint32 globalTime = 0;		// time syncronsied with the server
 
 void new_enemy( Screen& screen, Vec2 pos );	// add a new enemy to the game
 void enemies_render( Screen& screen );		// draws all the current enemies in the world
-void enemies_update( float dt );			// calls update on all the ememies
+void enemies_update( Uint32 time );			// calls update on all the ememies
 void init();								// initalises libraries
 void quit(std::string message = "");		// quits libraries and exits the program
 											// pass a string to show an error on exit
@@ -89,13 +89,12 @@ int main(int argc, char* argv[])
 		{
 			//recvd->Print();
 
-			if( recvd->Type() == PT_MOVE )
+			if( recvd->Type() == PT_MOVE && !enemies.empty() )
 			{
+				// flash a red square
 				SDL_Rect rect{ 0, 0, 16, 16 };
 				SDL_SetRenderDrawColor( screen.GetRenderer(), 255, 0, 0, 255 );
 				SDL_RenderFillRect( screen.GetRenderer(), &rect );
-
-				MovePacket* p = (MovePacket*)recvd.get();
 
 				// cast the recvd basePacket unique_ptr to movePacket and transfer ownership to the relevant enemy
 				enemies.back()->StoreMovePacket( std::unique_ptr<MovePacket>( (MovePacket*)recvd.release() ) );
@@ -103,6 +102,8 @@ int main(int argc, char* argv[])
 			else if( recvd->Type() == PT_PLAYER_JOINED )
 			{
 				PlayerJoinedPacket* p = (PlayerJoinedPacket*)recvd.get();
+
+				p->Print();
 
 				new_enemy( screen, p->GetPosition() );
 			}
@@ -115,7 +116,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		enemies_update( deltaTime );
+		enemies_update( SDL_GetTicks() );
 		enemies_render( screen );
 
 		screen.Display();
@@ -137,11 +138,11 @@ void new_enemy( Screen& screen, Vec2 pos )
 	enemies.back()->SetTexture( screen.GetRenderer(), "../../resources/sprite_1.bmp" );
 }
 
-void enemies_update( float dt )
+void enemies_update( Uint32 time )
 {
 	for( auto& e : enemies )
 	{
-		e->Update( dt );
+		e->Update( time );
 	}
 }
 

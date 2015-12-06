@@ -22,6 +22,8 @@ public:
 	// http://stackoverflow.com/questions/243945/calculating-a-2d-vectors-cross-product
 	// Vec2 cross(const Vec2& v) const;
 
+	Vec2 lerpTo( const Vec2& dest, float t );
+
 	inline float lengthSquared() const { return x*x + y*y; }
 	inline float length() const { return std::sqrt(x*x + y*y); }
 	
