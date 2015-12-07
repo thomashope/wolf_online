@@ -5,7 +5,7 @@
 
 #define JOINRESPONSE_PACKET_SIZE 3
 
-enum JoinResponse {
+enum JoinResponse : Uint8 {
 	JR_OK = 0,
 	JR_REJECT= 1
 };

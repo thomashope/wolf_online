@@ -27,6 +27,8 @@ std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 		return ConstructPacket( new MovePacket );
 	case PT_PLAYER_JOINED:
 		return ConstructPacket( new PlayerJoinedPacket );
+	case PT_SYNC:
+		return ConstructPacket( new SyncPacket );
 	default:
 		return nullptr;
 	}

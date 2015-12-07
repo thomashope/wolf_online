@@ -3,7 +3,14 @@
 
 #include <memory>
 #include <SDL2/SDL.h>
-class BasePacket;
+
+#include "../shared/JoinRequestPacket.h"
+#include "../shared/JoinResponsePacket.h"
+#include "../shared/MapResponsePacket.h"
+#include "../shared/MovePacket.h"
+#include "../shared/HeartbeatPacket.h"
+#include "../shared/PlayerJoinedPacket.h"
+#include "../shared/SyncPacket.h"
 
 // Must be larger than the largest packet that will be recvd
 #define UNIVERSAL_PACKET_SIZE 640

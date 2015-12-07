@@ -47,7 +47,7 @@ void Player::Update( const World& world, const Input& input, float deltaTime )
 	}
 
 	// The velocity if the difference between the new and old position
-	// per second 
+	// per second
 	vel_ = pos - OldPos;
 	vel_ *= (1.0f / deltaTime);
 
@@ -81,7 +81,7 @@ bool Player::MovedSignificantly()
 	//TODO
 	// if enough time has passed min, max
 	// they have moved a bit
-	// they have rotated quite a bit (45* at least ?) 
+	// they have rotated quite a bit (45* at least ?)
 }
 
 BasePacket* Player::GetMovePacket()

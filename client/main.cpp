@@ -12,6 +12,7 @@
 #include "../shared/HeartbeatPacket.h"
 #include "../shared/PlayerJoinedPacket.h"
 #include "../shared/MapResponsePacket.h"
+#include "../shared/SyncPacket.h"
 using namespace InstantCG;
 
 #define SCREEN_WIDTH 640
@@ -25,8 +26,8 @@ using namespace InstantCG;
 Player player;
 std::vector<Enemy*> enemies;
 
-Uint32 localTime = 0;		// time of current frame
-Uint32 oldTime = 0;			// time of previous frame
+Uint32 localTime = 0;			// time of current frame
+Uint32 oldLocalTime = 0;		// time of previous frame
 Uint32 globalTime = 0;		// time syncronsied with the server
 
 void new_enemy( Screen& screen, Vec2 pos );	// add a new enemy to the game
@@ -67,9 +68,10 @@ int main(int argc, char* argv[])
 	std::cout << "Starting Game Loop..." << std::endl;
 	while( !input.AskedToQuit() )	// START OF GAME LOOP
 	{
-		oldTime = localTime;
-		localTime = SDL_GetTicks( );
-		float deltaTime = (localTime - oldTime) / 1000.0f;
+		oldLocalTime = localTime;
+		localTime = SDL_GetTicks();
+		globalTime += localTime - oldLocalTime;
+		float deltaTime = (localTime - oldLocalTime) / 1000.0f;
 
 		input.PorcessEvents();
 
@@ -83,7 +85,7 @@ int main(int argc, char* argv[])
 		}
 
 		server.Read();
-				
+
 		std::unique_ptr<BasePacket> recvd;
 		while( server.PollPacket( recvd ) )
 		{
@@ -96,8 +98,9 @@ int main(int argc, char* argv[])
 				SDL_SetRenderDrawColor( screen.GetRenderer(), 255, 0, 0, 255 );
 				SDL_RenderFillRect( screen.GetRenderer(), &rect );
 
+				// TODO: support multple clients
 				// cast the recvd basePacket unique_ptr to movePacket and transfer ownership to the relevant enemy
-				enemies.back()->StoreMovePacket( std::unique_ptr<MovePacket>( (MovePacket*)recvd.release() ) );
+				enemies.back()->StoreMovePacket( std::unique_ptr<MovePacket>( (MovePacket*)recvd.release() ), globalTime );
 			}
 			else if( recvd->Type() == PT_PLAYER_JOINED )
 			{
@@ -114,9 +117,23 @@ int main(int argc, char* argv[])
 				//TODO: the player shouldn't be able to start untill they have the map
 				world.SetMap( (char*)p->Data(), p->Width(), p->Height() );
 			}
+			else if( recvd->Type() == PT_SYNC )
+			{
+				if( ((SyncPacket*)recvd.get())->GetMode() == SYNC_RETURN )
+				{
+					// send the packet back to the server immidiately
+					server.UDPSend( recvd.release() );
+					std::cout << "Replied to sync" << std::endl;
+				}
+				else
+				{
+					std::cout << "Server set global time" << std::endl;
+					globalTime = ((SyncPacket*)recvd.get())->GetTime();
+				}
+			}
 		}
 
-		enemies_update( SDL_GetTicks() );
+		enemies_update( globalTime );
 		enemies_render( screen );
 
 		screen.Display();
@@ -134,8 +151,14 @@ int main(int argc, char* argv[])
 
 void new_enemy( Screen& screen, Vec2 pos )
 {
+	#ifdef _WIN32
+		std::string path("../../resources/sprite_1.bmp");
+	#else
+		std::string path("../resources/sprite_1.bmp");
+	#endif
+
 	enemies.push_back( new Enemy( pos ) );
-	enemies.back()->SetTexture( screen.GetRenderer(), "../../resources/sprite_1.bmp" );
+	enemies.back()->SetTexture( screen.GetRenderer(), path );
 }
 
 void enemies_update( Uint32 time )

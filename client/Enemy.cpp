@@ -18,19 +18,19 @@ void Enemy::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode bl
 	// delete the current texture if there is one
 	if (texture_) delete texture_;
 	texture_ = nullptr;
-	
+
 	// load the new texture
 	texture_ = new Texture(ren, filePath, blendmode);
 }
 
-void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> packet )
+void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> packet, Uint32 time )
 {
 	// TODO: check the timestamp for when the move was sent
 	newest_move_ = std::move( packet );
 
 	// store the curent position and when that prediction was made
 	old_predicted_pos_ = pos_;
-	old_prediction_time_ = SDL_GetTicks(); // TODO: replace with global time?
+	old_prediction_time_ = time;
 }
 
 void Enemy::Update( Uint32 time )
@@ -42,12 +42,12 @@ void Enemy::Update( Uint32 time )
 	float lerp_duration = 500;
 
 	pos_ = newest_move_->GetPosition();
-		
+
 	// if less than the lerpDuration has passed, keep lerping
 	if( time - old_prediction_time_ < lerp_duration )
-	{	
+	{
 		// how much time has passed since the new packet was received
-		float packet_age = (time - old_prediction_time_) / 1000.0f;
+		float packet_age = ((time - old_prediction_time_) / (float)lerp_duration);
 
 		// predict where the player will be after the fixed time
 		Vec2 predicted_pos = newest_move_->GetPosition( ) + newest_move_->GetVelocity( ) * packet_age;
@@ -58,9 +58,8 @@ void Enemy::Update( Uint32 time )
 	else
 	// the previous packet is too old, ignore it
 	{
-		//TODO: base prediction on absolute of newest packet instead of this relative kind
-		//pos_ = newest_move_->GetVelocity() * (time - newest_move_->GetTime() / 1000.0f);
-	} //*/
+		pos_ = newest_move_->GetPosition() + newest_move_->GetVelocity() * (time - newest_move_->GetTime() / 1000.0f);
+	}
 }
 
 void Enemy::Render( const Player& player, DepthBuffer* zBuffer)
@@ -128,7 +127,7 @@ void Enemy::SetTransform( const Player& player )
 	float invDet = 1.0f / (player.plane.x * player.dir.y - player.dir.x * player.plane.y); //required for correct matrix multiplication
 
 	transform_.x = invDet * (player.dir.y * transPos.x - player.dir.x * transPos.y);
-	transform_.y = invDet * (-player.plane.y * transPos.x + player.plane.x * transPos.y); //this is actually the depth inside the screen, that what Z is in 3D   
+	transform_.y = invDet * (-player.plane.y * transPos.x + player.plane.x * transPos.y); //this is actually the depth inside the screen, that what Z is in 3D
 }
 
 float Enemy::Distance( Vec2 point ) const

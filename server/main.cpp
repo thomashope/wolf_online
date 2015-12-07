@@ -7,12 +7,6 @@
 #undef main // removes SDLs evil define
 
 #include "../shared/UniversalPacket.h"
-#include "../shared/JoinRequestPacket.h"
-#include "../shared/JoinResponsePacket.h"
-#include "../shared/MapResponsePacket.h"
-#include "../shared/MovePacket.h"
-#include "../shared/HeartbeatPacket.h"
-#include "../shared/PlayerJoinedPacket.h"
 #include "Client.h"
 
 #define SERVERIP "127.0.0.1"
@@ -250,16 +244,6 @@ void talk_udp()
 	// recv all pending udp packets
 	while( SDLNet_UDP_Recv( UDP_socket, &UDP_packet ) )
 	{
-		/*/ print packet info
-		std::cout << "UDP Packet incoming\n" << std::endl;
-		std::cout << "\tChan:    " << UDP_packet.channel << std::endl;
-		std::cout << "\tLen:     " << UDP_packet.len << std::endl;
-		std::cout << "\tMaxlen:  " << UDP_packet.maxlen << std::endl;
-		std::cout << "\tStatus:  " << UDP_packet.status << std::endl;
-		std::cout << "\tAddress: " << std::hex
-		<< UDP_packet.address.host << " " << std::dec
-		<< UDP_packet.address.port << std::endl;
-		//*/
 		auto recvd = uniPacket.CreateFromContents( );
 
 		if( recvd )
@@ -287,6 +271,30 @@ void talk_udp()
 				if( sender )
 				{
 					sender->SetUDPAddress( UDP_packet.address );
+				}
+
+				// Send a sync packet to the client with the server ime
+				SyncPacket sync;
+				sync.SetMode( SYNC_RETURN );
+				sync.SetID( packet->GetID() );
+				sync.SetTime( SDL_GetTicks() );
+				sender->UDPSend( sync );
+			}
+			else if( recvd->Type() == PT_SYNC )
+			{
+				SyncPacket* packet = (SyncPacket*)recvd.get();
+
+				// if the server receives a returned packet
+				if( packet->GetMode() == SYNC_RETURN )
+				{
+					// calculate the send time
+					Uint32 sendTime = ( SDL_GetTicks() - packet->GetTime() ) / 2;
+					SyncPacket sync;
+					sync.SetMode( SYNC_SET );
+					sync.SetID( packet->GetID() );
+					Client* sender = get_client( packet->GetID() );
+					sync.SetTime( SDL_GetTicks() + sendTime ); 		// the current time plus the time the packet will take to arrive
+					sender->UDPSend( sync );
 				}
 			}
 			else
@@ -321,7 +329,7 @@ void talk_tcp()
 					{
 						// print to console whe the packe is recvd
 						recvd->Print();
-						
+
 						if( recvd->Type() == PT_MAP_REQUEST )
 						{
 							std::cout << "player asked for map data" << std::endl;

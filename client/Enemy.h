@@ -17,7 +17,7 @@ public:
 	virtual ~Enemy() { if( texture_ ) delete texture_; }
 
 	void SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode blendmode = SDL_BLENDMODE_BLEND);
-	
+
 	void Update( Uint32 time );
 
 	void Render( const Player& player, DepthBuffer* zBuffer );
@@ -25,10 +25,10 @@ public:
 	// distance betwee the given point and the sprite
 	float Distance(Vec2 point) const;
 
-	void StoreMovePacket( std::unique_ptr<MovePacket> packet );
+	void StoreMovePacket( std::unique_ptr<MovePacket> packet, Uint32 time );
 
 	/* SETTERS */
-	
+
 	void SetPosition( Vec2 p ) { pos_ = p; }		// set the position
 	void SetVelocity( Vec2 v ) { vel_ = v; }		// Set the velocity
 	void SetScale( Vec2 s );				// amount to scale the sprite horizontally and vertically, must be +ve
