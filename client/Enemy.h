@@ -29,15 +29,17 @@ public:
 
 	/* SETTERS */
 
-	void SetPosition( Vec2 p ) { pos_ = p; }		// set the position
-	void SetVelocity( Vec2 v ) { vel_ = v; }		// Set the velocity
+	void SetPosition( Vec2 p ) { pos_ = p; }
+	void SetVelocity( Vec2 v ) { vel_ = v; }
+	void SetID( Uint8 ID ) { ID_ = ID; }
 	void SetScale( Vec2 s );				// amount to scale the sprite horizontally and vertically, must be +ve
 	void SetOffset( int offset );			// TODO: make this accept a more sensible type, eg float 0.0 on ground 1.0 on ceiling
 
 	/* GETTERS */
 
-	int Offset() const { return vOffset_; }
-	Vec2 Scale() const { return scale_; }
+	Uint8 GetID() const { return ID_; }
+	int GetOffset() const { return vOffset_; }
+	Vec2 GetScale() const { return scale_; }
 
 private:
 	//TODO: pass in a whole camera class
@@ -45,6 +47,7 @@ private:
 
 	Vec2 pos_;			// actual displayed position
 	Vec2 vel_;			// actual displayed velocity
+	Uint8 ID_;
 
 	std::unique_ptr<MovePacket> newest_move_;
 	Vec2 old_predicted_pos_;

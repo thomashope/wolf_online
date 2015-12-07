@@ -86,8 +86,7 @@ bool Player::MovedSignificantly( Uint32 globalTime )
 {
 	static Vec2 lastPos = pos;
 
-	if( send_move_ || 
-		globalTime - time_move_sent_ > 1000 )
+	if( send_move_ || globalTime - time_move_sent_ > 200 )
 	{
 		send_move_ = false;
 		return true;

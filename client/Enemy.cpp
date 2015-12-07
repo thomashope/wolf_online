@@ -44,7 +44,7 @@ void Enemy::Update( Uint32 globalTime )
 	//TODO: lerp the angle too
 
 	// move to the new position over a fixed time, milliseconds
-	Uint32 interp_duration = 500;
+	Uint32 interp_duration = 100;
 
 	// seconds since the newest packet was 'accurate' according to sender
 	float time_since_recv = ((globalTime - newest_move_->GetTime()) / 1000.0f);
@@ -59,14 +59,12 @@ void Enemy::Update( Uint32 globalTime )
 	if( interp_time < 1.0f )
 	{
 		// Lerp between the old position and the new prediction
-		//pos_ = (old_predicted_pos_ + newest_move_->GetVelocity() * time_since_recv).lerpTo( predicted_pos, interp_time );
 		pos_ = old_predicted_pos_.lerpTo( predicted_pos, interp_time );
 	}
 	else
 	// we are done interpolating, use the newest position only
 	{
-		pos_ = predicted_pos;// +newest_move_->GetVelocity() * (time_since_recv - 1.0f);
-		//pos_ = newest_move_->GetPosition() + newest_move_->GetVelocity() * ((globalTime - newest_move_->GetTime()) / 1000.0f);
+		pos_ = predicted_pos;
 	}
 }
 
@@ -89,6 +87,7 @@ void Enemy::Render( const Player& player, DepthBuffer* zBuffer)
 
 	//calculate width of the sprite
 	int spriteWidth = int(abs(int(SCREEN_HEIGHT / (transform_.y))) * scale_.x);
+	if( spriteWidth <= 0 ) spriteWidth = 1;
 	int drawStartX = spriteScreenX - (spriteWidth / 2);
 	if (drawStartX < 0) drawStartX = 0;
 	int drawEndX = spriteScreenX + (spriteWidth / 2);

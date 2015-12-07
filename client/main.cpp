@@ -24,12 +24,13 @@ Uint32 localTime = 0;			// time of current frame
 Uint32 oldLocalTime = 0;		// time of previous frame
 Uint32 globalTime = 0;			// time syncronsied with the server
 
-void new_enemy( Screen& screen, Vec2 pos );	// adds a new enemy to the game
-void enemies_render( Screen& screen );		// draws all the current enemies in the world
-void enemies_update( Uint32 time );			// calls update on all the ememies
-void init();								// initalises libraries
-void quit(std::string message = "");		// quits libraries and exits the program
-											// pass a string to show an error on exit
+bool get_enemy( Uint8 ID, int& index );					// searches for an enemy with ID, returns true if found and sets index
+void new_enemy( Screen& screen, Vec2 pos, Uint8 ID );	// adds a new enemy to the game
+void enemies_render( Screen& screen );					// draws all the current enemies in the world
+void enemies_update( Uint32 time );						// calls update on all the ememies
+void init();											// initalises libraries
+void quit(std::string message = "");					// quits libraries and exits the program
+														// pass a string to show an error on exit
 
 int main(int argc, char* argv[])
 {
@@ -87,14 +88,19 @@ int main(int argc, char* argv[])
 
 			if( recvd->Type() == PT_MOVE && !enemies.empty() )
 			{
-				// flash a red square
-				SDL_Rect rect{ 0, 0, 16, 16 };
-				SDL_SetRenderDrawColor( screen.GetRenderer(), 255, 0, 0, 255 );
-				SDL_RenderFillRect( screen.GetRenderer(), &rect );
 
-				// TODO: support multple clients
 				// cast the recvd basePacket unique_ptr to movePacket and transfer ownership to the relevant enemy
-				enemies.back()->StoreMovePacket( std::unique_ptr<MovePacket>( (MovePacket*)recvd.release() ), globalTime );
+				MovePacket* mp = (MovePacket*)recvd.get();
+				int enemy = 0;
+				if( get_enemy( mp->GetID(), enemy ) )
+				{
+					// flash a red square
+					SDL_Rect rect{ 0, 0, 16, 16 };
+					SDL_SetRenderDrawColor( screen.GetRenderer(), 255, 0, 0, 255 );
+					SDL_RenderFillRect( screen.GetRenderer(), &rect );
+
+					enemies[enemy]->StoreMovePacket( std::unique_ptr<MovePacket>( (MovePacket*)recvd.release() ), globalTime );
+				}
 			}
 			else if( recvd->Type() == PT_PLAYER_JOINED )
 			{
@@ -102,7 +108,7 @@ int main(int argc, char* argv[])
 
 				p->Print();
 
-				new_enemy( screen, p->GetPosition() );
+				new_enemy( screen, p->GetPosition(), p->GetID() );
 			}
 			else if( recvd->Type() == PT_MAP_RESPONSE )
 			{
@@ -144,7 +150,7 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-void new_enemy( Screen& screen, Vec2 pos )
+void new_enemy( Screen& screen, Vec2 pos, Uint8 ID )
 {
 	#ifdef _WIN32
 		std::string path("../../resources/sprite_1.bmp");
@@ -154,6 +160,20 @@ void new_enemy( Screen& screen, Vec2 pos )
 
 	enemies.push_back( new Enemy( pos ) );
 	enemies.back()->SetTexture( screen.GetRenderer(), path );
+	enemies.back()->SetID( ID );
+}
+
+bool get_enemy( Uint8 ID, int& index )
+{
+	for( int i = 0; i < enemies.size(); i++ )
+	{
+		if( ID == enemies[i]->GetID() )
+		{
+			index = i;
+			return true;
+		}
+	}
+	return false;
 }
 
 void enemies_update( Uint32 time )
