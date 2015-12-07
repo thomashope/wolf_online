@@ -1,11 +1,4 @@
 #include "UniversalPacket.h"
-#include "HeartbeatPacket.h"
-#include "JoinRequestPacket.h"
-#include "JoinResponsePacket.h"
-#include "MapRequestPacket.h"
-#include "MapResponsePacket.h"
-#include "MovePacket.h"
-#include "PlayerJoinedPacket.h"
 
 std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 {
@@ -19,10 +12,10 @@ std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 		return ConstructPacket( new JoinRequestPacket );
 	case PT_JOIN_RESPONSE:
 		return ConstructPacket( new JoinResponsePacket );
-	case PT_MAP_REQUEST:
-		return ConstructPacket( new MapRequestPacket );
-	case PT_MAP_RESPONSE:
-		return ConstructPacket( new MapResponsePacket );
+	case PT_INFO_REQUEST:
+		return ConstructPacket( new InfoRequestPacket );
+	case PT_MAP_DATA:
+		return ConstructPacket( new MapDataPacket );
 	case PT_MOVE:
 		return ConstructPacket( new MovePacket );
 	case PT_PLAYER_JOINED:

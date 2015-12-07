@@ -6,7 +6,8 @@
 
 #include "../shared/JoinRequestPacket.h"
 #include "../shared/JoinResponsePacket.h"
-#include "../shared/MapResponsePacket.h"
+#include "../shared/InfoRequestPacket.h"
+#include "../shared/MapDataPacket.h"
 #include "../shared/MovePacket.h"
 #include "../shared/HeartbeatPacket.h"
 #include "../shared/PlayerJoinedPacket.h"

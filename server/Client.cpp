@@ -12,6 +12,8 @@ Client::~Client()
 {
 	//TODO: send disconnect message
 
+	SDLNet_TCP_DelSocket( *SockSet_, TCPsocket_ );
+
 	// cleanup the socket
 	SDLNet_TCP_Close( TCPsocket_ );
 }

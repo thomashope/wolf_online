@@ -57,23 +57,22 @@ void init();
 
 // checks if any new clients want to join and adds them to the list
 void accept_client();
+
+void process_udp();
+void process_tcp();
+
+void tcp_send_to( Uint8 ID, const BasePacket& packet );			// sends the packet the specified client
+void tcp_send_all( const BasePacket& packet );					// sends the packet to all connected clients
+void tcp_send_all_except( Uint8 ID, const BasePacket& packet );	// sends the packet to all clients except the specified client
+
+void udp_send_to( Uint8 ID, const BasePacket& packet );			// sends the packet the specified client
+void udp_send_all( const BasePacket& packet );					// sends the packet to all connected clients
+void udp_send_all_except( Uint8 ID, const BasePacket& packet );	// sends the packet to all clients except the specified client
+
 Uint8 get_availible_id();
-
-void talk_udp();
-
-void talk_tcp();
-
-void tcp_send_to( Uint8 ID, const BasePacket& packet );
-void tcp_send_all( const BasePacket& packet );
-void tcp_send_all_except( Uint8 ID, const BasePacket& packet );
-
-void udp_send_to( Uint8 ID, const BasePacket& packet );
-void udp_send_all( const BasePacket& packet );
-void udp_send_all_except( Uint8 ID, const BasePacket& packet );
-
 Client* get_client( Uint8 ID );
 
-int main(int argc, char* argv[])
+int main( int argc, char* argv[] )
 {
 	init();
 
@@ -87,9 +86,11 @@ int main(int argc, char* argv[])
 		// try to accept new clients
 		accept_client();
 
-		talk_udp();
+		// read and respond udp packets
+		process_udp();
 
-		talk_tcp();
+		// read and respond tcp packets
+		process_tcp();
 	}
 
 	// cleanup
@@ -199,13 +200,16 @@ void accept_client()
 			// Add the new client to the socket set
 			SDLNet_TCP_AddSocket( TCP_SocketSet, clients.back()->GetTCPSocket() );
 			SDLNet_CheckSockets( TCP_SocketSet, 0 );
+			clients.back()->AttachSocketSet( &TCP_SocketSet );
 
 			// Tell other clients new client joined
 			PlayerJoinedPacket playerJoined( clients.back()->GetID() );
 			playerJoined.SetPosition( joinRequest.GetPosition() );
 			tcp_send_all_except( playerJoined.GetID(), playerJoined );
 
+			
 			// Tell new client about all other clients
+			/*
 			std::cout << "Telling " << (int)playerJoined.GetID() << " about ";
 			for( int i = 0; i < clients.size(); i++ )
 			{
@@ -217,10 +221,8 @@ void accept_client()
 				if( clients[i]->GetID() != playerJoined.GetID() )
 				{
 					clients.back()->TCPSend( currentPlayer );
-					std::cout << (int)clients[i]->GetID() << ", ";
 				}
-			}
-			std::cout << std::endl;
+			}*/
 
 			std::cout << "Client joined with ID: " << (int)clients.back()->GetID() << std::endl;
 		}
@@ -239,7 +241,7 @@ void accept_client()
 	}
 }
 
-void talk_udp()
+void process_udp()
 {
 	// recv all pending udp packets
 	while( SDLNet_UDP_Recv( UDP_socket, &UDP_packet ) )
@@ -310,7 +312,7 @@ void talk_udp()
 	}
 }
 
-void talk_tcp()
+void process_tcp()
 {
 	if( clients.size( ) > 0 )
 	{
@@ -330,14 +332,34 @@ void talk_tcp()
 						// print to console whe the packe is recvd
 						recvd->Print();
 
-						if( recvd->Type() == PT_MAP_REQUEST )
+						if( recvd->Type() == PT_INFO_REQUEST )
 						{
-							std::cout << "player asked for map data" << std::endl;
+							InfoRequestPacket* p = (InfoRequestPacket*)recvd.get( );
 
-							MapResponsePacket response;
-							response.SetMapData( mapData );
+							if( p->GetRequested() == RT_MAP_DATA )
+							{
+								// Send the current map
+								std::cout << "player asked for map data" << std::endl;
+								MapDataPacket response;
+								response.SetMapData( mapData );
+								(*client)->TCPSend( response );
+							}
+							else if( p->GetRequested() == RT_PLAYER_LIST )
+							{
+								// Send the list of connected players
+								for( int i = 0; i < clients.size( ); i++ )
+								{
+									PlayerJoinedPacket currentPlayer;
+									currentPlayer.SetID( clients[i]->GetID() );
+									currentPlayer.SetPosition( clients[i]->GetPosition( ) );
 
-							(*client)->TCPSend( response );
+									// dont tell the new client about themselvs
+									if( clients[i]->GetID() != p->GetID() )
+									{
+										get_client( p->GetID() )->TCPSend( currentPlayer );
+									}
+								}
+							}
 						}
 						else if( recvd->Type() == PT_MOVE )
 						{
@@ -439,6 +461,7 @@ Uint8 get_availible_id()
 	return id;
 }
 
+//TODO all calls to this chould check for nullptr
 Client* get_client( Uint8 ID )
 {
 	for( auto& client : clients)
@@ -449,4 +472,27 @@ Client* get_client( Uint8 ID )
 		}
 	}
 	return nullptr;
+}
+
+void DisconnectClient( Uint8 ID )
+{
+	bool found_client = false;
+
+	// remove the client from the vector
+	for( auto it = clients.begin(); it != clients.end(); it++ )
+	{
+		if( (*it)->GetID() == ID )
+		{
+			clients.erase( it );
+			found_client = true;
+			break;
+		}
+	}
+
+	// tell everyone else they disconnected
+	if( found_client )
+	{
+		//TODO
+		//udp_send_all();
+	}
 }

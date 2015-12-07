@@ -13,7 +13,7 @@ public:
   ~Connection();
 
 
-  bool Connect( Player& player, World& world, std::string host, Uint16 port );
+  bool Connect( Player& player, World& world, std::string host, Uint16 port, Uint32& globalTime );
 
   void TCPSend( BasePacket* packet );
   void UDPSend( BasePacket* packet );
@@ -27,12 +27,15 @@ public:
   bool PollPacket( std::unique_ptr<BasePacket>& packet );
 
 private:
-  TCPConnection tcp_conn_;
-  UDPConnection udp_conn_;
-  bool tcp_good_;
-  bool udp_good_;
+	bool SyncTimeWithServer( const Player& player, Uint32& globalTime );
+	bool GetMapData( const Player& player, World& world );
 
-  std::queue< std::unique_ptr<BasePacket> > packet_queue_;
+	TCPConnection tcp_conn_;
+	UDPConnection udp_conn_;
+	bool tcp_good_;
+	bool udp_good_;
+
+	std::queue< std::unique_ptr<BasePacket> > packet_queue_;
 };
 
 #endif

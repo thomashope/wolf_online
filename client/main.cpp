@@ -48,16 +48,7 @@ int main(int argc, char* argv[])
 	Input input;						// init the input handler
 	player.pos.set(22.0f, 12.0f);		// x and y start position
 
-	server.Connect( player, world, SERVERIP, SERVERPORT );
-	server.UDPSend( new HeartbeatPacket( player.ID ) );
-
-	//enemies.push_back(new Enemy(16, 16));
-	//enemies.push_back(new Enemy(20, 16));
-	//enemies.push_back(new Enemy(16, 20));
-	//enemies[0]->SetTexture(ren, "../img/sprite_1.bmp" );
-	//enemies[1]->SetTexture(ren, "../img/sprite_2.bmp" );
-	//enemies[2]->SetTexture(ren, "../img/sprite_3.bmp" );
-	//enemies[2]->SetScale( 0.5f, 0.5f );
+	server.Connect( player, world, SERVERIP, SERVERPORT, globalTime );
 
 	std::cout << "Starting Game Loop..." << std::endl;
 	while( !input.AskedToQuit() )	// START OF GAME LOOP
@@ -110,28 +101,14 @@ int main(int argc, char* argv[])
 
 				new_enemy( screen, p->GetPosition(), p->GetID() );
 			}
-			else if( recvd->Type() == PT_MAP_RESPONSE )
+			/*
+			else if( recvd->Type() == PT_MAP_DATA )
 			{
-				MapResponsePacket* p = (MapResponsePacket*)recvd.get();
+				MapDataPacket* p = (MapDataPacket*)recvd.get( );
 
 				//TODO: the player shouldn't be able to start untill they have the map
 				world.SetMap( (char*)p->Data(), p->Width(), p->Height() );
-			}
-			else if( recvd->Type() == PT_SYNC )
-			{
-				if( ((SyncPacket*)recvd.get())->GetMode() == SYNC_RETURN )
-				{
-					// send the packet back to the server immidiately
-					server.UDPSend( recvd.release() );
-					std::cout << "Replied to sync" << std::endl;
-				}
-				else
-				{
-					std::cout << "Server set global time" << std::endl;
-					// TODO: keep asking for global time if not already set
-					globalTime = ((SyncPacket*)recvd.get())->GetTime();
-				}
-			}
+			}*/
 		}
 
 		enemies_update( globalTime );

@@ -21,7 +21,7 @@ public:
 	~TCPConnection();
 
 	// returns true if a connection was established, or false if failed to connect
-	bool Connect(Player& player, std::string host, Uint16 port);
+	bool Connect( Player& player, std::string host, Uint16 port );
 
 	// returns true if the server sent the map successfully, or false if there was an error
 	void AttachWorld( World*  world );

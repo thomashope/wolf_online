@@ -25,8 +25,7 @@ public:
 	// Create a thread that sends packets as soon as they are added to the queue
 	void StartSenderThread();
 
-	//void Read();
-
+	// Pull the next packet form the network
 	std::unique_ptr<BasePacket> GetNextPacket();
 
 private:
@@ -39,7 +38,7 @@ private:
 	std::queue< std::unique_ptr<BasePacket> > packet_queue_;
 	std::thread* sender_thread_;
 
-	// Attach to the sender thread
+	// Sends queued packets, attached to the sender thread
 	void SendPackets();
 };
 

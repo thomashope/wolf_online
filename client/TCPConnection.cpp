@@ -1,13 +1,7 @@
 #include "TCPConnection.h"
 #include "world.h"
 #include "player.h"
-#include "../shared/JoinRequestPacket.h"
-#include "../shared/JoinResponsePacket.h"
-#include "../shared/MapRequestPacket.h"
-#include "../shared/MapResponsePacket.h"
-#include "../shared/PlayerJoinedPacket.h"
-#include "../shared/HeartbeatPacket.h"
-#include "../shared/MovePacket.h"
+#include "../shared/UniversalPacket.h"
 
 TCPConnection::TCPConnection() :
 sender_thread_( nullptr )
@@ -151,11 +145,11 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 			case PT_JOIN_RESPONSE:
 				bytesRemaining = JOINRESPONSE_PACKET_SIZE - 1;
 				break;
-			case PT_MAP_REQUEST:
-				bytesRemaining = MAPREQUST_PACKET_SIZE - 1;
+			case PT_INFO_REQUEST:
+				bytesRemaining = INFOREQUST_PACKET_SIZE - 1;
 				break;
-			case PT_MAP_RESPONSE:
-				bytesRemaining = MAPRESPONSE_PACKET_SIZE - 1;
+			case PT_MAP_DATA:
+				bytesRemaining = MAPDATA_PACKET_SIZE - 1;
 				break;
 			case PT_MOVE:
 				bytesRemaining = MOVE_PACKET_SIZE - 1;

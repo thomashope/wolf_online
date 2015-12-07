@@ -19,7 +19,12 @@ public:
 
 	// set the destination for UDP packets bound for this client
 	void SetUDPAddress( IPaddress address );
+
+	//
 	void SetPosition( Vec2 position ) { position_ = position; }
+
+	// Allows the clients to manage its own socket in the set
+	void AttachSocketSet( SDLNet_SocketSet* sockset ) { SockSet_ = sockset; }
 
 	TCPsocket GetTCPSocket() { return TCPsocket_; }
 	Uint8 GetID() { return ID_; }
@@ -33,6 +38,8 @@ private:
 	UDPpacket UDPpacket_;
 	bool hasUDPAddress_;
 	Uint8 ID_;
+
+	SDLNet_SocketSet* SockSet_;
 
 	Vec2 position_;
 };

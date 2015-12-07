@@ -5,13 +5,13 @@
 
 // TODO: handle variable size maps
 
-#define MAPRESPONSE_PACKET_SIZE (24*24 + 1)
+#define MAPDATA_PACKET_SIZE (24*24 + 1)
 
-class MapResponsePacket : public BasePacket
+class MapDataPacket : public BasePacket
 {
 public:
-	MapResponsePacket() : BasePacket(PT_MAP_RESPONSE, MAPRESPONSE_PACKET_SIZE) {}
-	~MapResponsePacket() {}
+	MapDataPacket( ) : BasePacket( PT_MAP_DATA, MAPDATA_PACKET_SIZE ) {}
+	~MapDataPacket() {}
 
 	// copy the 24*24 map data into the packet
 	void SetMapData(char* data) {
