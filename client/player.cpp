@@ -84,12 +84,13 @@ bool Player::MovedSignificantly()
 	// they have rotated quite a bit (45* at least ?)
 }
 
-BasePacket* Player::GetMovePacket()
+BasePacket* Player::GetMovePacket( Uint32 globalTime )
 {
 	timeSinceLastMove_ = SDL_GetTicks();
 
 	MovePacket* mp = new MovePacket();
 	mp->SetID( ID );
+	mp->SetTime( globalTime );
 	mp->SetPosition( pos );
 	mp->SetVelocity( vel_ );
 	//TODO: mp->SetAngle(

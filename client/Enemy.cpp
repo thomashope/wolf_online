@@ -23,34 +23,34 @@ void Enemy::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode bl
 	texture_ = new Texture(ren, filePath, blendmode);
 }
 
-void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> packet, Uint32 time )
+void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> packet, Uint32 globalTime )
 {
 	// TODO: check the timestamp for when the move was sent
 	newest_move_ = std::move( packet );
 
 	// store the curent position and when that prediction was made
 	old_predicted_pos_ = pos_;
-	old_prediction_time_ = time;
+	old_prediction_time_ = globalTime;
 }
 
-void Enemy::Update( Uint32 time )
+void Enemy::Update( Uint32 globalTime )
 {
 	if( newest_move_ == nullptr ) return;
 	//TODO: lerp the angle too
 
 	// move to the new position over a fixed time, milliseconds
-	float lerp_duration = 500;
+	Uint32 lerp_duration = 500;
 
 	pos_ = newest_move_->GetPosition();
 
 	// if less than the lerpDuration has passed, keep lerping
-	if( time - old_prediction_time_ < lerp_duration )
+	if( globalTime - old_prediction_time_ < lerp_duration )
 	{
-		// how much time has passed since the new packet was received
-		float packet_age = ((time - old_prediction_time_) / (float)lerp_duration);
-
 		// predict where the player will be after the fixed time
-		Vec2 predicted_pos = newest_move_->GetPosition( ) + newest_move_->GetVelocity( ) * packet_age;
+		Vec2 predicted_pos = newest_move_->GetPosition() + newest_move_->GetVelocity() * (lerp_duration / 1000.0f);
+
+		// how much time has passed since the new packet was received
+		float packet_age = ((globalTime - old_prediction_time_) / (float)lerp_duration);
 
 		// Lerp between the old position and the new prediction
 		pos_ = old_predicted_pos_.lerpTo( predicted_pos, packet_age );
@@ -58,7 +58,7 @@ void Enemy::Update( Uint32 time )
 	else
 	// the previous packet is too old, ignore it
 	{
-		pos_ = newest_move_->GetPosition() + newest_move_->GetVelocity() * (time - newest_move_->GetTime() / 1000.0f);
+		pos_ = newest_move_->GetPosition() + newest_move_->GetVelocity() * ((globalTime - newest_move_->GetTime()) / 1000.0f);
 	}
 }
 

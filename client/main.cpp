@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 
 		if( player.MovedSignificantly() )
 		{
-			server.UDPSend( player.GetMovePacket() );
+			server.UDPSend( player.GetMovePacket( globalTime ) );
 		}
 
 		server.Read();
@@ -128,6 +128,7 @@ int main(int argc, char* argv[])
 				else
 				{
 					std::cout << "Server set global time" << std::endl;
+					// TODO: keep asking for global time if not already set
 					globalTime = ((SyncPacket*)recvd.get())->GetTime();
 				}
 			}

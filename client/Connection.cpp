@@ -52,7 +52,7 @@ void Connection::Read()
 		std::unique_ptr<BasePacket> recvd = udp_conn_.GetNextPacket( );
 
 		// if the packet was not null, add it to the queue
-		if( recvd )
+		if( recvd != nullptr )
 			packet_queue_.push( std::move( recvd ) );
 		else
 			udp_packet_avalible = false;
@@ -65,7 +65,7 @@ void Connection::Read()
 		std::unique_ptr<BasePacket> recvd = tcp_conn_.GetNextPacket();
 
 		// if the packet was not null, add it to the queue
-		if( recvd )
+		if( recvd != nullptr )
 			packet_queue_.push( std::move( recvd ) );
 		else
 			tcp_packet_avalible = false;
