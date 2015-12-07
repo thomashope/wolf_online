@@ -71,6 +71,7 @@ void udp_send_all_except( Uint8 ID, const BasePacket& packet );	// sends the pac
 
 Uint8 get_availible_id();
 Client* get_client( Uint8 ID );
+void DisconnectClient( Uint8 ID );
 
 int main( int argc, char* argv[] )
 {
@@ -206,23 +207,6 @@ void accept_client()
 			PlayerJoinedPacket playerJoined( clients.back()->GetID() );
 			playerJoined.SetPosition( joinRequest.GetPosition() );
 			tcp_send_all_except( playerJoined.GetID(), playerJoined );
-
-			
-			// Tell new client about all other clients
-			/*
-			std::cout << "Telling " << (int)playerJoined.GetID() << " about ";
-			for( int i = 0; i < clients.size(); i++ )
-			{
-				PlayerJoinedPacket currentPlayer( clients[i]->GetID( ) );
-				//TODO: store the players last know position
-				playerJoined.SetPosition( clients[i]->GetPosition() );
-
-				// dont tell the new client about themselvs
-				if( clients[i]->GetID() != playerJoined.GetID() )
-				{
-					clients.back()->TCPSend( currentPlayer );
-				}
-			}*/
 
 			std::cout << "Client joined with ID: " << (int)clients.back()->GetID() << std::endl;
 		}
@@ -367,13 +351,11 @@ void process_tcp()
 
 							std::cout << "ID: " << packet->GetID() << " x: " << packet->GetPosition( ).x << " y: " << packet->GetPosition( ).y << std::endl;
 						}
-						else
-						{
+						else {
 							std::cout << "TCP type not recognised" << std::endl;
-						}//*/
+						}
 					}
-					else
-					{
+					else {
 						std::cout << "TCP packet not supported" << std::endl;
 					}
 
@@ -382,11 +364,12 @@ void process_tcp()
 				}
 				else
 				{
-					fprintf( stderr, "SDLNet_TCP_Recv: %s\n", SDLNet_GetError() );
 					// TODO: handle errors, kick the client?
+					std::cout << "SDLNet_TCP_Recv: %s\n" << SDLNet_GetError() << std::endl;
 					std::cout << "Could not communciate with player: " << (int)(*client)->GetID() << std::endl;
-					SDLNet_TCP_DelSocket( TCP_SocketSet, (*client)->GetTCPSocket() );
+					PlayerDisconnectedPacket disconnect( (*client)->GetID( ) );
 					client = clients.erase( client );
+					tcp_send_all( disconnect );
 				}
 			}
 			else
@@ -493,6 +476,7 @@ void DisconnectClient( Uint8 ID )
 	if( found_client )
 	{
 		//TODO
-		//udp_send_all();
+		PlayerDisconnectedPacket disconnect( ID );
+		udp_send_all( disconnect );
 	}
 }

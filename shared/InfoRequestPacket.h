@@ -23,7 +23,7 @@ public:
 	RequestType GetRequested() const { return (RequestType)data_[2]; }
 
 	void Print() const override {
-		std::cout << "Player ID: " << (int)GetID() << " asked to be sent the map" << std::endl;
+		std::cout << "Player ID: " << (int)GetID() << " asked to be sent the " << ((GetRequested() == PT_MAP_DATA) ? "map":"player list") << std::endl;
 	}
 };
 

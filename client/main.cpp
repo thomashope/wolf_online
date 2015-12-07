@@ -18,7 +18,7 @@
 #define SERVERPORT 1177
 
 Player player;
-std::vector<Enemy*> enemies;
+std::vector< std::unique_ptr<Enemy> > enemies;
 
 Uint32 localTime = 0;			// time of current frame
 Uint32 oldLocalTime = 0;		// time of previous frame
@@ -26,6 +26,7 @@ Uint32 globalTime = 0;			// time syncronsied with the server
 
 bool get_enemy( Uint8 ID, int& index );					// searches for an enemy with ID, returns true if found and sets index
 void new_enemy( Screen& screen, Vec2 pos, Uint8 ID );	// adds a new enemy to the game
+void delete_enemy( Uint8 ID );							// removes an enemy form the game
 void enemies_render( Screen& screen );					// draws all the current enemies in the world
 void enemies_update( Uint32 time );						// calls update on all the ememies
 void init();											// initalises libraries
@@ -95,20 +96,18 @@ int main(int argc, char* argv[])
 			}
 			else if( recvd->Type() == PT_PLAYER_JOINED )
 			{
+				// Add a new player
 				PlayerJoinedPacket* p = (PlayerJoinedPacket*)recvd.get();
-
 				p->Print();
-
 				new_enemy( screen, p->GetPosition(), p->GetID() );
 			}
-			/*
-			else if( recvd->Type() == PT_MAP_DATA )
+			else if( recvd->Type( ) == PT_PLAYER_DISCONNECTED )
 			{
-				MapDataPacket* p = (MapDataPacket*)recvd.get( );
-
-				//TODO: the player shouldn't be able to start untill they have the map
-				world.SetMap( (char*)p->Data(), p->Width(), p->Height() );
-			}*/
+				// Remove a player
+				PlayerDisconnectedPacket* p = (PlayerDisconnectedPacket*)recvd.get( );
+				p->Print();
+				delete_enemy( p->GetID() );
+			}
 		}
 
 		enemies_update( globalTime );
@@ -119,9 +118,6 @@ int main(int argc, char* argv[])
 	} // END OF GAME LOOP
 
 	// cleanup
-	for( auto& e : enemies ) delete e;
-	enemies.clear();
-
 	SDLNet_Quit();
 	SDL_Quit();
 	return 0;
@@ -135,14 +131,26 @@ void new_enemy( Screen& screen, Vec2 pos, Uint8 ID )
 		std::string path("../resources/sprite_1.bmp");
 	#endif
 
-	enemies.push_back( new Enemy( pos ) );
+	enemies.push_back( std::unique_ptr<Enemy>(new Enemy( pos )) );
 	enemies.back()->SetTexture( screen.GetRenderer(), path );
 	enemies.back()->SetID( ID );
 }
 
+void delete_enemy( Uint8 ID )
+{
+	for( auto it = enemies.begin(); it != enemies.end(); it++ )
+	{
+		if( (*it)->GetID() == ID )
+		{
+			enemies.erase( it );
+			break;
+		}
+	}
+}
+
 bool get_enemy( Uint8 ID, int& index )
 {
-	for( int i = 0; i < enemies.size(); i++ )
+	for( size_t i = 0; i < enemies.size(); i++ )
 	{
 		if( ID == enemies[i]->GetID() )
 		{
@@ -167,7 +175,7 @@ void enemies_render( Screen& screen )
 	struct ByDistance {
 		ByDistance( Vec2 to ) :to_( to ){}
 		Vec2 to_;
-		bool operator() ( Enemy* a, Enemy* b ) {
+		bool operator() ( std::unique_ptr<Enemy>& a, std::unique_ptr<Enemy>& b ) {
 			return (a->Distance( to_ ) > b->Distance( to_ ));
 		}
 	} byDistance( player.pos );

@@ -12,6 +12,7 @@
 #include "../shared/HeartbeatPacket.h"
 #include "../shared/PlayerJoinedPacket.h"
 #include "../shared/SyncPacket.h"
+#include "../shared/PlayerDisconnectedPacket.h"
 
 // Must be larger than the largest packet that will be recvd
 #define UNIVERSAL_PACKET_SIZE 640

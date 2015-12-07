@@ -157,6 +157,9 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 			case PT_PLAYER_JOINED:
 				bytesRemaining = PLAYERJOINED_PACKET_SIZE - 1;
 				break;
+			case PT_PLAYER_DISCONNECTED:
+				bytesRemaining = PLAYERDISCONNECTED_PACKET_SIZE - 1;
+				break;
 			default:
 				std::cout << "TCP Unknown Packet Size!!!" << std::endl;
 				// TODO: read all the packets from the queue
