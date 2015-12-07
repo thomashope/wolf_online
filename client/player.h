@@ -17,7 +17,7 @@ public:
 	void Update( const World& world, const Input& input, float deltaTime );
 
 	// true if the player has moved enough that it's worth telling the server
-	bool MovedSignificantly();
+	bool MovedSignificantly( Uint32 globalTime );
 
 	// creates a packet with the players current data
 	// TODO: use unique_ptr instead of raw ptr, untill then caller should delete the packet
@@ -34,11 +34,12 @@ public:
 
 private:
 	Vec2 vel_;
+	bool send_move_; // true when a move packet is worth sending
 
 	float moveSpeed_;
 	float rotSpeed_;
 
-	Uint32 timeSinceLastMove_;
+	Uint32 time_move_sent_;	// The last time the player sent a move packet
 };
 
 #endif

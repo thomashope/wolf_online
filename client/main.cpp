@@ -3,17 +3,11 @@
 #include <queue>
 #include <SDL2/SDL_net.h>
 
-#include "InstantCG.h"
 #include "Enemy.h"
 #include "input.h"
 #include "world.h"
 #include "Connection.h"
-#include "../shared/MovePacket.h"
-#include "../shared/HeartbeatPacket.h"
-#include "../shared/PlayerJoinedPacket.h"
-#include "../shared/MapResponsePacket.h"
-#include "../shared/SyncPacket.h"
-using namespace InstantCG;
+#include "../shared/UniversalPacket.h"
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
@@ -28,9 +22,9 @@ std::vector<Enemy*> enemies;
 
 Uint32 localTime = 0;			// time of current frame
 Uint32 oldLocalTime = 0;		// time of previous frame
-Uint32 globalTime = 0;		// time syncronsied with the server
+Uint32 globalTime = 0;			// time syncronsied with the server
 
-void new_enemy( Screen& screen, Vec2 pos );	// add a new enemy to the game
+void new_enemy( Screen& screen, Vec2 pos );	// adds a new enemy to the game
 void enemies_render( Screen& screen );		// draws all the current enemies in the world
 void enemies_update( Uint32 time );			// calls update on all the ememies
 void init();								// initalises libraries
@@ -49,10 +43,9 @@ int main(int argc, char* argv[])
 
 	// Initialise SDL and the screen
 	Screen screen( SCREEN_WIDTH, SCREEN_HEIGHT, "wolf_client" );
+	World world( screen, MAP_WIDTH, MAP_HEGIHT );
 	Input input;						// init the input handler
 	player.pos.set(22.0f, 12.0f);		// x and y start position
-
-	World world( screen, MAP_WIDTH, MAP_HEGIHT );
 
 	server.Connect( player, world, SERVERIP, SERVERPORT );
 	server.UDPSend( new HeartbeatPacket( player.ID ) );
@@ -79,7 +72,8 @@ int main(int argc, char* argv[])
 
 		world.Render( player );
 
-		if( player.MovedSignificantly() )
+		// send a move packet only when there was some significant change to the player position
+		if( player.MovedSignificantly( globalTime ) )
 		{
 			server.UDPSend( player.GetMovePacket( globalTime ) );
 		}

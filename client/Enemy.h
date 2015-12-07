@@ -25,7 +25,7 @@ public:
 	// distance betwee the given point and the sprite
 	float Distance( Vec2 point ) const;
 
-	void StoreMovePacket( std::unique_ptr<MovePacket> packet, Uint32 globalTime );
+	void StoreMovePacket( std::unique_ptr<MovePacket> recvd_move, Uint32 globalTime );
 
 	/* SETTERS */
 

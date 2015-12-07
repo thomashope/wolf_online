@@ -8,9 +8,11 @@ pos_(pos.x, pos.y),
 vel_(0, 0),
 scale_(1.0f),
 texture_(nullptr),
-vOffset_(0),
-newest_move_(nullptr)
+vOffset_(0)
 {
+	newest_move_ = std::unique_ptr<MovePacket>( new MovePacket );
+	newest_move_->SetPosition( Vec2(0, 0) );
+	newest_move_->SetVelocity( Vec2(0, 0) );
 }
 
 void Enemy::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode blendmode)
@@ -23,42 +25,48 @@ void Enemy::SetTexture(SDL_Renderer* ren, std::string filePath, SDL_BlendMode bl
 	texture_ = new Texture(ren, filePath, blendmode);
 }
 
-void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> packet, Uint32 globalTime )
+void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> recvd_move, Uint32 globalTime )
 {
-	// TODO: check the timestamp for when the move was sent
-	newest_move_ = std::move( packet );
+	// if the packet is older than the current packet, throw it away
+	if( recvd_move->GetTime() > newest_move_->GetTime() )
+	{
+		// else store packet is it is newer
+		newest_move_ = std::move( recvd_move );
 
-	// store the curent position and when that prediction was made
-	old_predicted_pos_ = pos_;
-	old_prediction_time_ = globalTime;
+		// store the curent position and when that prediction was made
+		old_predicted_pos_ = pos_;
+		old_prediction_time_ = globalTime;
+	}
 }
 
 void Enemy::Update( Uint32 globalTime )
 {
-	if( newest_move_ == nullptr ) return;
 	//TODO: lerp the angle too
 
 	// move to the new position over a fixed time, milliseconds
-	Uint32 lerp_duration = 500;
+	Uint32 interp_duration = 500;
 
-	pos_ = newest_move_->GetPosition();
+	// seconds since the newest packet was 'accurate' according to sender
+	float time_since_recv = ((globalTime - newest_move_->GetTime()) / 1000.0f);
+	
+	// expected positio nof the player with linear prediction
+	Vec2 predicted_pos = newest_move_->GetPosition() + newest_move_->GetVelocity() * time_since_recv;
 
-	// if less than the lerpDuration has passed, keep lerping
-	if( globalTime - old_prediction_time_ < lerp_duration )
+	// how are through interpolation should the player be
+	float interp_time = ((globalTime - old_prediction_time_) / (float)interp_duration);
+
+	// if the interpolation is not finished,
+	if( interp_time < 1.0f )
 	{
-		// predict where the player will be after the fixed time
-		Vec2 predicted_pos = newest_move_->GetPosition() + newest_move_->GetVelocity() * (lerp_duration / 1000.0f);
-
-		// how much time has passed since the new packet was received
-		float packet_age = ((globalTime - old_prediction_time_) / (float)lerp_duration);
-
 		// Lerp between the old position and the new prediction
-		pos_ = old_predicted_pos_.lerpTo( predicted_pos, packet_age );
+		//pos_ = (old_predicted_pos_ + newest_move_->GetVelocity() * time_since_recv).lerpTo( predicted_pos, interp_time );
+		pos_ = old_predicted_pos_.lerpTo( predicted_pos, interp_time );
 	}
 	else
-	// the previous packet is too old, ignore it
+	// we are done interpolating, use the newest position only
 	{
-		pos_ = newest_move_->GetPosition() + newest_move_->GetVelocity() * ((globalTime - newest_move_->GetTime()) / 1000.0f);
+		pos_ = predicted_pos;// +newest_move_->GetVelocity() * (time_since_recv - 1.0f);
+		//pos_ = newest_move_->GetPosition() + newest_move_->GetVelocity() * ((globalTime - newest_move_->GetTime()) / 1000.0f);
 	}
 }
 

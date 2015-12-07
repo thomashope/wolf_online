@@ -8,7 +8,8 @@ pos( 2.0f, 2.0f ),
 dir( -1.0f, 0.0f ),
 plane( 0.0f, 0.66f ),
 moveSpeed_( 5.0f ),
-rotSpeed_( 90.0f )
+rotSpeed_( 90.0f ),
+send_move_( false )
 {
 }
 
@@ -20,6 +21,7 @@ void Player::Update( const World& world, const Input& input, float deltaTime )
 	else if( input.XMotion() < 0 ) rotation *= input.XMotion() * -0.2f;
 
 	Vec2 OldPos = pos;
+	Vec2 oldVel = vel_;
 
 	//strafe to the right
 	if( input.KeyDown( SDL_SCANCODE_D ) )
@@ -38,7 +40,10 @@ void Player::Update( const World& world, const Input& input, float deltaTime )
 	{
 		if( world.GetGrid( int( pos.x + dir.x * speed ), int( pos.y ) ) == false ) pos.x += dir.x * speed;
 		if( world.GetGrid( int( pos.x ), int( pos.y + dir.y * speed ) ) == false ) pos.y += dir.y * speed;
+		vel_.x = dir.x * moveSpeed_;
+		vel_.y = dir.y * moveSpeed_;
 	}
+	else vel_ = Vec2( 0, 0 );
 	//move backwards if no wall behind you
 	if( input.KeyDown( SDL_SCANCODE_S ) )
 	{
@@ -50,6 +55,18 @@ void Player::Update( const World& world, const Input& input, float deltaTime )
 	// per second
 	vel_ = pos - OldPos;
 	vel_ *= (1.0f / deltaTime);
+
+	if( (vel_.x > 0 && oldVel.x < 0) ||	// send a move packet
+		(vel_.x < 0 && oldVel.x > 0) ||	// if there was a sudden change of direction
+		(vel_.y > 0 && oldVel.y < 0) ||
+		(vel_.y < 0 && oldVel.y > 0) || 
+		(vel_.x == 0 && oldVel.x != 0) || // or if the player stopped suddenly
+		(vel_.y == 0 && oldVel.y != 0) || 
+		(oldVel.x == 0 && vel_.x != 0) || // or if the player started suddenly
+		(oldVel.y == 0 && vel_.y != 0) )
+	{
+		send_move_ = true;
+	}
 
 	//rotate to the right
 	if( input.XMotion() > 0 )
@@ -65,12 +82,14 @@ void Player::Update( const World& world, const Input& input, float deltaTime )
 	}
 }
 
-bool Player::MovedSignificantly()
+bool Player::MovedSignificantly( Uint32 globalTime )
 {
 	static Vec2 lastPos = pos;
 
-	if( SDL_GetTicks() - timeSinceLastMove_ > 1000 )
+	if( send_move_ || 
+		globalTime - time_move_sent_ > 1000 )
 	{
+		send_move_ = false;
 		return true;
 	}
 	else
@@ -86,7 +105,7 @@ bool Player::MovedSignificantly()
 
 BasePacket* Player::GetMovePacket( Uint32 globalTime )
 {
-	timeSinceLastMove_ = SDL_GetTicks();
+	time_move_sent_ = globalTime;
 
 	MovePacket* mp = new MovePacket();
 	mp->SetID( ID );

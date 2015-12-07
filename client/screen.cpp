@@ -8,8 +8,6 @@ renderer_(nullptr ),
 window_(nullptr ),
 depthBuffer_(nullptr )
 {
-	SDL_Init(SDL_INIT_EVERYTHING);
-
 	// create the window
 	window_ = SDL_CreateWindow( title.c_str( ),
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
