@@ -17,7 +17,11 @@ public:
 	UDPConnection();
 	~UDPConnection();
 
+	// returns true if a connection was established, or false if failed to connect
 	bool Connect( std::string host, Uint16 port );
+
+	// Returns false if something went wrong
+	bool Good() { return connection_good_; }
 
 	// adds a packet to the queue
 	void QueuePacket( BasePacket* packet );
@@ -34,7 +38,8 @@ public:
 private:
 	IPaddress address_;
 	UDPsocket socket_;
-	UniversalPacket packet_;	// Data is received into this packet, TODO: can I remove this?
+	UniversalPacket packet_;			// Data is received into this packet
+	std::atomic_bool connection_good_;
 
 	std::atomic_bool close_thread_;
 	std::mutex queue_mtx_;

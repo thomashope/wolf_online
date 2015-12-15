@@ -20,7 +20,6 @@ public:
 	bool MovedSignificantly( Uint32 globalTime );
 
 	// creates a packet with the players current data
-	// TODO: use unique_ptr instead of raw ptr, untill then caller should delete the packet
 	BasePacket* GetMovePacket( Uint32 globalTime );
 
 	Vec2 pos;		// x and y start position

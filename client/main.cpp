@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	server.Connect( player, world, SERVERIP, SERVERPORT, globalTime );
 
 	std::cout << "Starting Game Loop..." << std::endl;
-	while( !input.AskedToQuit() )	// START OF GAME LOOP
+	while( !input.AskedToQuit() && server.Good() )	// START OF GAME LOOP
 	{
 		oldLocalTime = localTime;
 		localTime = SDL_GetTicks();

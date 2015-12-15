@@ -142,7 +142,6 @@ void init()
 	UDP_packet.maxlen = uniPacket.Size( );
 
 	// Allocate the socket set
-	//TODO: check for errors
 	TCP_SocketSet = SDLNet_AllocSocketSet( MAX_CLIENTS + 1 );
 	if( TCP_SocketSet == NULL )
 	{
@@ -175,7 +174,6 @@ void accept_client()
 		if (SDLNet_TCP_Recv(new_socket, joinRequest.Data(), joinRequest.Size()) <= 0)
 		{
 			// an error occured, set the socket to null and try connecting again
-			// TODO: find out if this leaves allocated memory?
 			return;
 		}
 
@@ -188,7 +186,7 @@ void accept_client()
 
 			response.SetGivenID( get_availible_id() );
 
-			if( SDLNet_TCP_Send( new_socket, response.Data(), response.Size() ) < response.Size() )
+			if( SDLNet_TCP_Send( new_socket, response.Data(), response.Size() ) < (int)response.Size() )
 			{
 				// the whole packet could not be sent, some error occured
 				return;
@@ -216,7 +214,7 @@ void accept_client()
 			JoinResponsePacket response;
 			response.SetResponse( JR_REJECT );
 
-			if( SDLNet_TCP_Send( new_socket, response.Data(), response.Size() ) < response.Size() )
+			if( SDLNet_TCP_Send( new_socket, response.Data(), response.Size() ) < (int)response.Size() )
 			{
 				// the whole packet could not be sent, some error occured
 				return;
@@ -240,11 +238,19 @@ void process_udp()
 
 				MovePacket* packet = (MovePacket*)recvd.get( );
 
-				// update the servers copy of the client
-				get_client( packet->GetID() )->SetPosition( packet->GetPosition() );
+				Client* client = get_client(packet->GetID());
+				if( client )
+				{
+					// update the servers copy of the client
+					client->SetPosition(packet->GetPosition());
+					// tell all the other clients
+					udp_send_all_except( packet->GetID(), *packet );
+				}
+				else
+				{
+					std::cout << "packet destined for unknown client" << std::endl;
+				}
 
-				// tell all the other clients
-				udp_send_all_except( packet->GetID(), *packet );
 			}
 			else if( recvd->Type() == PT_HEARTBEAT )
 			{
@@ -280,7 +286,11 @@ void process_udp()
 					sync.SetID( packet->GetID() );
 					Client* sender = get_client( packet->GetID() );
 					sync.SetTime( SDL_GetTicks() + sendTime ); 		// the current time plus the time the packet will take to arrive
-					sender->UDPSend( sync );
+					if( sender ) {
+						sender->UDPSend( sync );
+					} else {
+						std::cout << "An unknown client tried to sync" << std::endl;
+					}
 				}
 			}
 			else
@@ -331,7 +341,7 @@ void process_tcp()
 							else if( p->GetRequested() == RT_PLAYER_LIST )
 							{
 								// Send the list of connected players
-								for( int i = 0; i < clients.size( ); i++ )
+								for( size_t i = 0; i < clients.size( ); i++ )
 								{
 									PlayerJoinedPacket currentPlayer;
 									currentPlayer.SetID( clients[i]->GetID() );
@@ -364,7 +374,6 @@ void process_tcp()
 				}
 				else
 				{
-					// TODO: handle errors, kick the client?
 					std::cout << "SDLNet_TCP_Recv: %s\n" << SDLNet_GetError() << std::endl;
 					std::cout << "Could not communciate with player: " << (int)(*client)->GetID() << std::endl;
 					PlayerDisconnectedPacket disconnect( (*client)->GetID( ) );
@@ -401,7 +410,8 @@ void udp_send_all_except( Uint8 ID, const BasePacket& packet )
 
 void udp_send_to( Uint8 ID, const BasePacket& packet )
 {
-	get_client( ID )->UDPSend( packet );
+	Client* client = get_client( ID );
+	if( client ) client->UDPSend( packet );
 }
 
 void tcp_send_all( const BasePacket& packet )
@@ -425,7 +435,8 @@ void tcp_send_all_except( Uint8 ID, const BasePacket& packet )
 
 void tcp_send_to( Uint8 ID, const BasePacket& packet )
 {
-	get_client( ID )->TCPSend( packet );
+	Client* client = get_client( ID );
+	if( client ) client->TCPSend( packet );
 }
 
 Uint8 get_availible_id()
@@ -444,7 +455,6 @@ Uint8 get_availible_id()
 	return id;
 }
 
-//TODO all calls to this chould check for nullptr
 Client* get_client( Uint8 ID )
 {
 	for( auto& client : clients)
@@ -475,7 +485,6 @@ void DisconnectClient( Uint8 ID )
 	// tell everyone else they disconnected
 	if( found_client )
 	{
-		//TODO
 		PlayerDisconnectedPacket disconnect( ID );
 		udp_send_all( disconnect );
 	}

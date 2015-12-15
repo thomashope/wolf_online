@@ -18,9 +18,6 @@ public:
 
 	Vec2 rotate(float degrees) const;
 	float dot(const Vec2& v) const;
-	// TODO: Decide how to implement cross product
-	// http://stackoverflow.com/questions/243945/calculating-a-2d-vectors-cross-product
-	// Vec2 cross(const Vec2& v) const;
 
 	Vec2 lerpTo( const Vec2& dest, float t );
 

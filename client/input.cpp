@@ -53,7 +53,7 @@ void Input::PorcessEvents()
 
 bool Input::KeyDown( SDL_Scancode key ) const
 {
-	return keyboard_[key];
+	return keyboard_[key] != 0;
 }
 
 void Input::HandleMouseEvent(const SDL_Event& mouseEvent)
@@ -67,5 +67,5 @@ void Input::HandleMouseEvent(const SDL_Event& mouseEvent)
 
 void Input::StoreKeyboard( )
 {
-	oldKeyboard_.ctrl = (bool)keyboard_[SDL_SCANCODE_LCTRL];
+	oldKeyboard_.ctrl = keyboard_[SDL_SCANCODE_LCTRL] != 0;
 }

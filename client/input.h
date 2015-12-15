@@ -15,7 +15,6 @@ public:
 
 	bool AskedToQuit() const { return askedToQuit_; }
 
-	// TODO: change this so it's handled inside the player, friend of player?
 	int XMotion() const { return mouse_.xMotion; }
 
 private:

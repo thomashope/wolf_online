@@ -23,6 +23,9 @@ public:
 	// returns true if a connection was established, or false if failed to connect
 	bool Connect( Player& player, std::string host, Uint16 port );
 
+	// Returns false if something went wrong
+	bool Good() { return connection_good_; }
+
 	// returns true if the server sent the map successfully, or false if there was an error
 	void AttachWorld( World*  world );
 
@@ -46,11 +49,7 @@ private:
 
 	// Used to update the world map
 	World* world_;
-
-	// TODO: remove this
-	// data received is stored in the bufferr
-	Uint8* buffer_;
-	const int MAX_BUFFER{ 256 };
+	std::atomic_bool connection_good_;
 
 	std::atomic_bool close_thread_;
 	std::thread* sender_thread_;

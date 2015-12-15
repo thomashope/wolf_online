@@ -6,6 +6,8 @@ UDPConnection::UDPConnection() :
 sender_thread_(nullptr)
 {
 	close_thread_ = false;
+
+	connection_good_ = false;
 }
 
 UDPConnection::~UDPConnection()
@@ -32,6 +34,7 @@ bool UDPConnection::Connect( std::string host, Uint16 port )
 	}
 
 	// connected successfully
+	connection_good_ = true;
 	return true;
 }
 
@@ -50,7 +53,6 @@ void UDPConnection::StartSenderThread()
 	if (sender_thread_ == nullptr)
 		sender_thread_ = new std::thread(std::mem_fun(&UDPConnection::SendPackets), this);
 }
-
 
 void UDPConnection::SendPacket()
 {
@@ -78,7 +80,11 @@ void UDPConnection::SendPacket()
 		SDLpacket.maxlen = packet->Size();
 
 		// Send the packet
-		SDLNet_UDP_Send( socket_, -1, &SDLpacket );
+		if( SDLNet_UDP_Send( socket_, -1, &SDLpacket ) <= 0 )
+		{
+			// Some error occured
+			connection_good_ = false;
+		}
 	}
 }
 
@@ -110,7 +116,10 @@ void UDPConnection::SendPackets()
 			SDLpacket.maxlen = packet->Size();
 
 			// Send the packet
-			SDLNet_UDP_Send( socket_, -1, &SDLpacket );
+			if( SDLNet_UDP_Send( socket_, -1, &SDLpacket ) <= 0 )
+			{
+				connection_good_ = false;
+			}
 
 			// clean dangling ptr
 			SDLpacket.data = nullptr;
@@ -137,38 +146,3 @@ std::unique_ptr<BasePacket> UDPConnection::GetNextPacket()
 		return nullptr;
 	}
 }
-
-/*
-void UDPConnection::Read()
-{
-	UDPpacket SDLpacket;
-	// join the SDLpackt to the universal packet
-	SDLpacket.data = packet_.Data();
-	SDLpacket.maxlen = packet_.Size();
-
-	while( SDLNet_UDP_Recv( socket_, &SDLpacket ) )
-	{
-		auto recvd = packet_.CreateFromContents( );
-
-		if( recvd )
-		{
-			if( recvd->Type( ) == PT_MOVE )
-			{
-				recvd->Print();
-			}
-			else if( recvd->Type() == PT_PLAYER_JOINED )
-			{
-				recvd->Print();
-			}
-			else
-			{
-				std::cout << "UDP type not recognised" << std::endl;
-			}
-		}
-		else
-		{
-			std::cout << "UDP packet not supported" << std::endl;
-		}
-	}
-}
-*/

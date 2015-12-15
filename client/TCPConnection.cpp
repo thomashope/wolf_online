@@ -6,10 +6,10 @@
 TCPConnection::TCPConnection() :
 sender_thread_( nullptr )
 {
-	// allocate the buffer
-	buffer_ = new Uint8[MAX_BUFFER];
 
 	close_thread_ = false;
+
+	connection_good_ = false;
 
 	socket_set_ = SDLNet_AllocSocketSet( 1 );
 }
@@ -20,10 +20,6 @@ TCPConnection::~TCPConnection()
 	close_thread_ = true;
 	if( sender_thread_ )
 		sender_thread_->join();
-
-	// free the buffer
-	delete[] buffer_;
-	buffer_ = nullptr;
 
 	SDLNet_FreeSocketSet( socket_set_ );
 }
@@ -56,8 +52,11 @@ bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
 	JoinResponsePacket response;
 
 	// read the response
-	//TODO: check return value for errors
-	SDLNet_TCP_Recv( socket_, response.Data(), response.Size() );
+	if( SDLNet_TCP_Recv( socket_, response.Data(), response.Size() ) <= 0 )
+	{
+		std::cerr << "SDLNet_TCP_Recv error: " << SDLNet_GetError( ) << std::endl;
+		return false;
+	}
 
 	if( response.GetResponse() == JR_REJECT )
 	{
@@ -73,9 +72,9 @@ bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
 	SDLNet_TCP_AddSocket( socket_set_, socket_ );
 
 	// return success
+	connection_good_ = true;
 	return true;
 }
-
 
 void TCPConnection::AttachWorld( World* world )
 {
@@ -111,7 +110,11 @@ void TCPConnection::SendPacket()
 		queue_mtx_.unlock();
 
 		// send the front packet
-		SDLNet_TCP_Send( socket_, packet->Data( ), packet->Size( ) );
+		if( SDLNet_TCP_Send( socket_, packet->Data( ), packet->Size( ) ) < (int)packet->Size() )
+		{
+			// something terrible went wrong
+			connection_good_ = false;
+		}
 	}
 }
 
@@ -119,8 +122,6 @@ void TCPConnection::SendPackets()
 {
 	while( !close_thread_ )
 	{
-		//TODO: stopy the busy waiting
-
 		if( !packet_queue_.empty() )
 		{
 			queue_mtx_.lock();
@@ -132,7 +133,11 @@ void TCPConnection::SendPackets()
 			queue_mtx_.unlock();
 
 			// send the front packet
-			SDLNet_TCP_Send(socket_, packet->Data(), packet->Size());
+			if( SDLNet_TCP_Send( socket_, packet->Data(), packet->Size() ) < (int)packet->Size() )
+			{
+				// something terrible went wrong
+				connection_good_ = false;
+			}
 		}
 	}
 
@@ -145,11 +150,9 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 
 	if( SDLNet_SocketReady( socket_ ) )
 	{
-		//if( SDLNet_TCP_Recv( socket_, packet_.Data( ), packet_.Size( ) ) > 0 )
 		// read the first byte
 		if( SDLNet_TCP_Recv( socket_, packet_.Data(), 1 ) > 0 )
 		{
-			//*
 			int bytesRemaining;
 			switch( *packet_.Data() )
 			{
@@ -179,8 +182,7 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 				break;
 			default:
 				std::cout << "TCP Unknown Packet Size!!!" << std::endl;
-				// TODO: read all the packets from the queue
-				// read the entire buffer
+				// read the entire buffer, and hope that clears it out
 				bytesRemaining = packet_.Size() - 1;
 				break;
 			}
@@ -191,7 +193,6 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 			{
 				std::cout << "TCP could not get packet contents" << std::endl;
 			}
-			//*/
 
 			std::unique_ptr<BasePacket> recvd = packet_.CreateFromContents();
 			if( recvd )
@@ -205,7 +206,7 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 		else
 		{
 			std::cout << "SDLNet_TCP_Recv: " << SDLNet_GetError() << std::endl;
-			//TODO: tcp error occured, do something, quit?
+			connection_good_ = false;
 			return nullptr;
 		}
 	}
@@ -214,65 +215,3 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 		return nullptr;
 	}
 }
-
-/*
-void TCPConnection::Read()
-{
-	SDLNet_CheckSockets( socket_set_, 0 );
-
-	while( SDLNet_SocketReady( socket_ ) )
-	{
-		// Receive data directly into the universal packet
-		//TODO: check a complete packet is being received
-		if( SDLNet_TCP_Recv( socket_, packet_.Data(), packet_.Size() ) > 0 )
-		{
-			auto recvd = packet_.CreateFromContents();
-
-			// check if its a join request
-			if( recvd )
-			{
-				if( recvd->Type() == PT_HEARTBEAT )
-				{
-					HeartbeatPacket* packet = (HeartbeatPacket*)recvd.get();
-
-					std::cout << "ID: " << (int)packet->GetID() << " sent heartbeat" << std::endl;
-				}
-				else if( recvd->Type() == PT_MOVE )
-				{
-					MovePacket* packet = (MovePacket*)recvd.get();
-
-					std::cout << "ID: " << (int)packet->GetID() << " x: " << packet->GetPosition( ).x << " y: " << packet->GetPosition( ).y << std::endl;
-				}
-				else if( recvd->Type() == PT_MAP_RESPONSE )
-				{
-					MapResponsePacket* packet = (MapResponsePacket*)recvd.get();
-
-					std::cout << "server sent map data " << std::endl;
-					world_->SetMap( packet->GetMapData(), packet->Width(), packet->Height() );
-				}
-				else if( recvd->Type() == PT_PLAYER_JOINED )
-				{
-					PlayerJoinedPacket* packet = (PlayerJoinedPacket*)recvd.get();
-
-					std::cout << "New player: " << (int)packet->GetID() << std::endl;
-				}
-				else
-				{
-					std::cout << "TCP type not recognised: " << (int)recvd->Type() << std::endl;
-				}
-			}
-			else
-			{
-				std::cout << "TCP packet not supported" << std::endl;
-			}
-		}
-		else
-		{
-			std::cout << "SDLNet_TCP_Recv: " << SDLNet_GetError() << std::endl;
-			//TODO: tcp error occured, do something, quit?
-		}
-
-		SDLNet_CheckSockets( socket_set_, 0 );
-	}
-}
-*/

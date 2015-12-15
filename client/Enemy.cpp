@@ -1,4 +1,3 @@
-
 #include "Enemy.h"
 #include "SDLsetup.h"
 #include "player.h"
@@ -41,8 +40,6 @@ void Enemy::StoreMovePacket( std::unique_ptr<MovePacket> recvd_move, Uint32 glob
 
 void Enemy::Update( Uint32 globalTime )
 {
-	//TODO: lerp the angle too
-
 	// move to the new position over a fixed time, milliseconds
 	Uint32 interp_duration = 100;
 
@@ -106,7 +103,6 @@ void Enemy::Render( const Player& player, DepthBuffer* zBuffer)
 		if (transform_.y > 0 && stripe > 0 && stripe < SCREEN_WIDTH)
 		{
 			if (transform_.y < zBuffer[stripe].perpDist) {
-				//TODO: make sprites scale past screen height as the player aproaches instead of just dissapearing
 				SDL_Rect samp{ texX, 0, 1, 16 };
 				SDL_Rect dest{ stripe, drawStartY, 1, drawEndY - drawStartY };
 				texture_->RenderRect(&samp, &dest);

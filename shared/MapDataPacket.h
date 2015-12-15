@@ -3,8 +3,6 @@
 
 #include "BasePacket.h"
 
-// TODO: handle variable size maps
-
 #define MAPDATA_PACKET_SIZE (24*24 + 1)
 
 class MapDataPacket : public BasePacket

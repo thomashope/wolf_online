@@ -25,9 +25,11 @@ bool Connection::Connect( Player& player, World& world, std::string host, Uint16
 		return false;
 
 	// each connection sends packets on a differnt thread as soon as they are avalible
-	sender_thread_ = new std::thread( std::mem_fun( &Connection::SendPackets ), this );
-	//tcp_conn_.StartSenderThread();
-	//udp_conn_.StartSenderThread();
+	tcp_conn_.StartSenderThread();
+	udp_conn_.StartSenderThread();
+	// also an option to send all packets over one thread if you want it
+	//sender_thread_ = new std::thread( std::mem_fun( &Connection::SendPackets ), this );
+
 
 	// Ping the server
 	if( !SyncTimeWithServer( player, globalTime ) )
@@ -40,7 +42,8 @@ bool Connection::Connect( Player& player, World& world, std::string host, Uint16
 	// Get the player list
 	TCPSend( new InfoRequestPacket( player.ID, RT_PLAYER_LIST ) );
 
-  return true;
+	// Check all the connections are ok ?
+	return Good();
 }
 
 bool Connection::SyncTimeWithServer( const Player& player, Uint32& globalTime )
@@ -121,9 +124,9 @@ bool Connection::GetMapData( const Player& player, World& world )
 				return true;
 			}
 		}
-	}
 
-	current_time = SDL_GetTicks();
+		current_time = SDL_GetTicks();
+	}
 }
 
 void Connection::TCPSend( BasePacket* packet )
@@ -145,7 +148,7 @@ void Connection::Read()
 		std::unique_ptr<BasePacket> recvd = udp_conn_.GetNextPacket( );
 
 		// if the packet was not null, add it to the queue
-		if( recvd != nullptr )
+		if( recvd )
 			packet_queue_.push( std::move( recvd ) );
 		else
 			udp_packet_avalible = false;
@@ -162,8 +165,7 @@ void Connection::Read()
 			packet_queue_.push( std::move( recvd ) );
 		else
 			tcp_packet_avalible = false;
-	}
-  
+	}  
 }
 
 bool Connection::PollPacket( std::unique_ptr<BasePacket>& packet )
@@ -195,4 +197,15 @@ void Connection::SendPackets()
 
 		udp_conn_.SendPacket();
 	}
+}
+
+bool Connection::Good()
+{
+	if( tcp_conn_.Good() == false ||
+		udp_conn_.Good() == false )
+	{
+		return false;
+	}
+
+	return true;
 }

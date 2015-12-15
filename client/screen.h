@@ -4,9 +4,6 @@
 #include <SDL2/SDL.h>
 #include <string>
 
-//TODO: make this sensible
-// remove instantCG
-
 struct DepthBuffer {
 	int top;
 	int bottom;

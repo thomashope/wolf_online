@@ -33,7 +33,7 @@ public:
 	void SetVelocity( Vec2 v ) { vel_ = v; }
 	void SetID( Uint8 ID ) { ID_ = ID; }
 	void SetScale( Vec2 s );				// amount to scale the sprite horizontally and vertically, must be +ve
-	void SetOffset( int offset );			// TODO: make this accept a more sensible type, eg float 0.0 on ground 1.0 on ceiling
+	void SetOffset( int offset );			// pixel offset for sprites
 
 	/* GETTERS */
 
@@ -42,7 +42,6 @@ public:
 	Vec2 GetScale() const { return scale_; }
 
 private:
-	//TODO: pass in a whole camera class
 	void SetTransform( const Player& player );
 
 	Vec2 pos_;			// actual displayed position

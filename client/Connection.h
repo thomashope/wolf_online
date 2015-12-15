@@ -18,7 +18,7 @@ public:
   void UDPSend( BasePacket* packet );
 
   // Returns false if something went wrong
-  bool Good(); //TODO implement
+  bool Good();
 
   // Pulls all pending packets and adds them to the queue
   void Read();
@@ -31,11 +31,9 @@ private:
 
 	TCPConnection tcp_conn_;
 	UDPConnection udp_conn_;
-	bool tcp_good_;
-	bool udp_good_;
 
 	std::queue< std::unique_ptr<BasePacket> > packet_queue_;
-		
+
 	std::atomic_bool close_thread_;	// closes the sender thread when true
 	std::thread* sender_thread_;	// 
 

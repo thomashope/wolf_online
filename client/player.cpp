@@ -95,11 +95,6 @@ bool Player::MovedSignificantly( Uint32 globalTime )
 	{
 		return false;
 	}
-
-	//TODO
-	// if enough time has passed min, max
-	// they have moved a bit
-	// they have rotated quite a bit (45* at least ?)
 }
 
 BasePacket* Player::GetMovePacket( Uint32 globalTime )
@@ -111,7 +106,6 @@ BasePacket* Player::GetMovePacket( Uint32 globalTime )
 	mp->SetTime( globalTime );
 	mp->SetPosition( pos );
 	mp->SetVelocity( vel_ );
-	//TODO: mp->SetAngle(
 
 	return (BasePacket*)mp;
 }
