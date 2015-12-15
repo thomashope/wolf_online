@@ -87,6 +87,7 @@ bool Connection::SyncTimeWithServer( const Player& player, Uint32& globalTime )
 		current_time = SDL_GetTicks( );
 	}
 	std::cout << "Server set golbal time to: " << globalTime << "ms" << std::endl;
+	return true;
 }
 
 bool Connection::GetMapData( const Player& player, World& world )
