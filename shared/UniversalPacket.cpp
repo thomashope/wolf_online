@@ -27,7 +27,6 @@ std::unique_ptr<BasePacket> UniversalPacket::CreateFromContents()
 	default:
 		return nullptr;
 	}
-
 }
 
 std::unique_ptr<BasePacket> UniversalPacket::ConstructPacket(BasePacket* packet)
