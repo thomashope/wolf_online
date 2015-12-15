@@ -21,7 +21,7 @@ Vec2 Vec2::rotate(float degrees) const {
 		result.y = y * -1;
 	}
 	else {
-		float radians = degrees * 3.14159265 / 180.0;
+		float radians = degrees * 3.14159265f / 180.0f;
 		// else apply rotation matrix
 		result.x = x * cos(radians) + (y * sin(radians) * -1);
 		result.y = x * sin(radians) + (y * cos(radians));

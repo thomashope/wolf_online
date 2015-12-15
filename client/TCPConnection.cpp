@@ -146,8 +146,8 @@ void TCPConnection::SendPackets()
 
 std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 {
-	SDLNet_CheckSockets( socket_set_, 0 );
-
+	// check the sockets for readyness
+	if( SDLNet_CheckSockets( socket_set_, 0 ) > 0)
 	if( SDLNet_SocketReady( socket_ ) )
 	{
 		// read the first byte

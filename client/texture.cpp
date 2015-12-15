@@ -9,7 +9,6 @@ texture_(nullptr)
 	if (bmp == nullptr) {
 		std::cerr << "SDL_LoadBMP Error: " << SDL_GetError( ) << std::endl;
 	}
-	//else { std::cout << "Found: " << filePath << std::endl; }
 
 	// Set magenta (super pink) as the transparent colour if a blend mode was given
 	if (blendMode != SDL_BLENDMODE_NONE) {

@@ -1,5 +1,5 @@
 #include "Enemy.h"
-#include "SDLsetup.h"
+#include "Defines.h"
 #include "player.h"
 
 Enemy::Enemy( Vec2 pos ) :
