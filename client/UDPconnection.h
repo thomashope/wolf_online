@@ -26,7 +26,10 @@ public:
 	void StartSenderThread();
 
 	// Pull the next packet form the network
-	std::unique_ptr<BasePacket> GetNextPacket();
+	std::unique_ptr<BasePacket> GetNextPacket( );
+
+	// Send the single next packet in the queue
+	void SendPacket();
 
 private:
 	IPaddress address_;

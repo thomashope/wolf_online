@@ -32,10 +32,11 @@ public:
 	// creates a thread that sends packets as soon as they are added to the queue
 	void StartSenderThread();
 
-	//void Read();
-
 	// Receives the single next packet from the network
 	std::unique_ptr<BasePacket> GetNextPacket();
+
+	// Send the next packet in the queue
+	void SendPacket();
 
 private:
 	IPaddress address_;	// Address of the recipient
@@ -52,9 +53,9 @@ private:
 	const int MAX_BUFFER{ 256 };
 
 	std::atomic_bool close_thread_;
+	std::thread* sender_thread_;
 	std::mutex queue_mtx_;
 	std::queue< std::unique_ptr<BasePacket> > packet_queue_;
-	std::thread* sender_thread_;
 
 	// attach to the sender thread
 	void SendPackets();

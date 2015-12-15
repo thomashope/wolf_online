@@ -2,12 +2,17 @@
 #include "world.h"
 #include "../shared/UniversalPacket.h"
 
-Connection::Connection()
+Connection::Connection() :
+sender_thread_( nullptr )
 {
 }
 
 Connection::~Connection()
 {
+	// close the thread
+	close_thread_ = true;
+	if( sender_thread_ )
+		sender_thread_->join();
 }
 
 bool Connection::Connect( Player& player, World& world, std::string host, Uint16 port, Uint32& globalTime )
@@ -20,8 +25,9 @@ bool Connection::Connect( Player& player, World& world, std::string host, Uint16
 		return false;
 
 	// each connection sends packets on a differnt thread as soon as they are avalible
-	tcp_conn_.StartSenderThread();
-	udp_conn_.StartSenderThread();
+	sender_thread_ = new std::thread( std::mem_fun( &Connection::SendPackets ), this );
+	//tcp_conn_.StartSenderThread();
+	//udp_conn_.StartSenderThread();
 
 	// Ping the server
 	if( !SyncTimeWithServer( player, globalTime ) )
@@ -172,4 +178,20 @@ bool Connection::PollPacket( std::unique_ptr<BasePacket>& packet )
 	}
 
 	return false;
+}
+
+void Connection::StartSenderThread()
+{
+	if( sender_thread_ == nullptr )
+		sender_thread_ = new std::thread( std::mem_fun( &Connection::SendPackets ), this  );
+}
+
+void Connection::SendPackets()
+{
+	while( !close_thread_ )
+	{
+		tcp_conn_.SendPacket();
+
+		udp_conn_.SendPacket();
+	}
 }

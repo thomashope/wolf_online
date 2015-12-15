@@ -30,20 +30,6 @@ bool UDPConnection::Connect( std::string host, Uint16 port )
 		fprintf( stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError( ) );
 		return false;
 	}
-	//*
-	// Allocate memory for the packet
-	//if( !(UDP_send_packet = SDLNet_AllocPacket( 128 )) )
-	//{
-	//	fprintf( stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError( ) );
-	//	exit( EXIT_FAILURE );
-	//}
-
-	// Setup the packet
-	//SDLpacket_.address.host = address_.host;	// Set the destination host
-	//SDLpacket_.address.port = address_.port;	// Set the destination port
-	//SDLpacket_.len = UNIVERSAL_PACKET_SIZE;		// Packet size in bytes
-	//SDLpacket_.maxlen = UNIVERSAL_PACKET_SIZE;
-	//SDLpacket_.data = packet_.Data();			// use the buffer in the universal packet
 
 	// connected successfully
 	return true;
@@ -63,6 +49,37 @@ void UDPConnection::StartSenderThread()
 	// create a thread if one doesn't already exist
 	if (sender_thread_ == nullptr)
 		sender_thread_ = new std::thread(std::mem_fun(&UDPConnection::SendPackets), this);
+}
+
+
+void UDPConnection::SendPacket()
+{
+	if( !packet_queue_.empty() )
+	{
+		// Create a SDLNet packet to fill with data
+		UDPpacket SDLpacket;
+
+		// setup the SDLpackets destination
+		SDLpacket.address.host = address_.host;
+		SDLpacket.address.port = address_.port;
+
+		// protect the queue
+		queue_mtx_.lock();
+
+		// remove the packet from the front of the queue
+		std::unique_ptr<BasePacket> packet = std::move( packet_queue_.front() );
+		packet_queue_.pop();
+
+		queue_mtx_.unlock();
+
+		// point the SDL packet to the data in the BasePacket
+		SDLpacket.data = packet->Data();
+		SDLpacket.len = packet->Size();
+		SDLpacket.maxlen = packet->Size();
+
+		// Send the packet
+		SDLNet_UDP_Send( socket_, -1, &SDLpacket );
+	}
 }
 
 void UDPConnection::SendPackets()

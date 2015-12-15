@@ -98,6 +98,23 @@ void TCPConnection::StartSenderThread()
 		sender_thread_ = new std::thread( std::mem_fun( &TCPConnection::SendPackets ), this );
 }
 
+void TCPConnection::SendPacket()
+{
+	if( !packet_queue_.empty( ) )
+	{
+		queue_mtx_.lock();
+
+		// remove the packet form the queue
+		std::unique_ptr<BasePacket> packet = std::move( packet_queue_.front( ) );
+		packet_queue_.pop();
+
+		queue_mtx_.unlock();
+
+		// send the front packet
+		SDLNet_TCP_Send( socket_, packet->Data( ), packet->Size( ) );
+	}
+}
+
 void TCPConnection::SendPackets()
 {
 	while( !close_thread_ )

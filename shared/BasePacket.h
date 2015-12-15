@@ -43,6 +43,11 @@ protected:
 public:
 	virtual ~BasePacket() {}
 
+	// returns the type of the packet
+	// packet types cannoct be changed after construction ...
+	// ... but could be PT_UNKNOWN
+	virtual PacketType Type() const final { return (PacketType)data_[0]; }
+
 	// returns the contents of the packet ready for sending
 	virtual Uint8* Data() const final { return data_.get(); }
 
@@ -51,11 +56,6 @@ public:
 
 	// Print the contents of the packe to cout
 	virtual void Print() const { std::cout << "Packet print not defined" << std::endl; }
-
-	// returns the type of the packet
-	// packet types cannoct be changed after construction ...
-	// ... but could be PT_UNKNOWN
-	virtual PacketType Type() const final { return (PacketType)data_[0]; }
 };
 
 // Helper functions for packing

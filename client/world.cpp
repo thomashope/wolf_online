@@ -43,7 +43,7 @@ screen_( &screen )
 World::~World()
 {
 	// cleanup the texturse
-	for( int i = 0; i < textures_.size(); i++ )
+	for( size_t i = 0; i < textures_.size(); i++ )
 	{
 		delete textures_[i];
 		textures_[i] = nullptr;
@@ -188,7 +188,7 @@ void World::Render(const Player& player)
 		int lineHeight = abs( int( screen_->Height() / screen_->GetDepthBuffer()[x].perpDist ) );
 
 		int textureIndex = GetGrid( mapX, mapY );
-		if( textureIndex >= textures_.size() )
+		if( textureIndex >= (int)textures_.size() )
 		{
 			textureIndex = 0;
 		}

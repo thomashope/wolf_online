@@ -14,7 +14,7 @@ public:
 
 	void SetPosition( Vec2 position );
 
-	Vec2 GetPosition( ) const;
+	Vec2 GetPosition() const;
 };
 
 #endif
