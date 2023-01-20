@@ -1,4 +1,4 @@
-#include "UDPconnection.h"
+#include "UDPConnection.h"
 #include "../shared/BasePacket.h"
 #include "../shared/MovePacket.h"
 
