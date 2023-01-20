@@ -37,7 +37,9 @@ bool TCPConnection::Connect( Player& player, std::string host, Uint16 port )
 	socket_ = SDLNet_TCP_Open( &address_ );
 	if( !socket_ )
 	{
-		std::cerr << "SDLNet_TCP_Open error: " << SDLNet_GetError() << std::endl;
+		std::cerr << "SDLNet_TCP_Open error: " << SDLNet_GetError() << std::endl
+			<< "host: " << host << std::endl
+			<< "port: " << port << std::endl;
 		return false;
 	}
 

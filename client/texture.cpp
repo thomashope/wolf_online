@@ -7,7 +7,8 @@ texture_(nullptr)
 	// load the file into a surface
 	SDL_Surface *bmp = SDL_LoadBMP(filePath.c_str());
 	if (bmp == nullptr) {
-		std::cerr << "SDL_LoadBMP Error: " << SDL_GetError( ) << std::endl;
+		std::cerr << "SDL_LoadBMP Error: " << SDL_GetError() << ". filepath: " << filePath << std::endl;
+		return;
 	}
 
 	// Set magenta (super pink) as the transparent colour if a blend mode was given

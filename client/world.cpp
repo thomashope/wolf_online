@@ -29,7 +29,7 @@ screen_( &screen )
 #if defined(_WIN32)
 	std::string resPath( "../../resources/" );
 #else
-	std::string resPath( "../resources/");
+	std::string resPath( "./resources/");
 #endif
 
 	// Load the textures

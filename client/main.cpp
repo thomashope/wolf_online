@@ -129,7 +129,7 @@ void new_enemy( Screen& screen, Vec2 pos, Uint8 ID )
 	#ifdef _WIN32
 		std::string path("../../resources/sprite_1.bmp");
 	#else
-		std::string path("../resources/sprite_1.bmp");
+		std::string path("./resources/sprite_1.bmp");
 	#endif
 
 	enemies.push_back( std::unique_ptr<Enemy>(new Enemy( pos )) );
