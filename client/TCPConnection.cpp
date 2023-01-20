@@ -150,70 +150,70 @@ std::unique_ptr<BasePacket> TCPConnection::GetNextPacket()
 {
 	// check the sockets for readyness
 	if( SDLNet_CheckSockets( socket_set_, 0 ) > 0)
-	if( SDLNet_SocketReady( socket_ ) )
 	{
-		// read the first byte
-		if( SDLNet_TCP_Recv( socket_, packet_.Data(), 1 ) > 0 )
+		if( SDLNet_SocketReady( socket_ ) )
 		{
-			int bytesRemaining;
-			switch( *packet_.Data() )
+			// read the first byte
+			if( SDLNet_TCP_Recv( socket_, packet_.Data(), 1 ) > 0 )
 			{
-			case PT_HEARTBEAT:
-				bytesRemaining = HEARTBEAT_PACKET_SIZE - 1;
-				break;
-			case PT_JOIN_REQUEST:
-				bytesRemaining = JOINREQUEST_PACKET_SIZE - 1;
-				break;
-			case PT_JOIN_RESPONSE:
-				bytesRemaining = JOINRESPONSE_PACKET_SIZE - 1;
-				break;
-			case PT_INFO_REQUEST:
-				bytesRemaining = INFOREQUST_PACKET_SIZE - 1;
-				break;
-			case PT_MAP_DATA:
-				bytesRemaining = MAPDATA_PACKET_SIZE - 1;
-				break;
-			case PT_MOVE:
-				bytesRemaining = MOVE_PACKET_SIZE - 1;
-				break;
-			case PT_PLAYER_JOINED:
-				bytesRemaining = PLAYERJOINED_PACKET_SIZE - 1;
-				break;
-			case PT_PLAYER_DISCONNECTED:
-				bytesRemaining = PLAYERDISCONNECTED_PACKET_SIZE - 1;
-				break;
-			default:
-				std::cout << "TCP Unknown Packet Size!!!" << std::endl;
-				// read the entire buffer, and hope that clears it out
-				bytesRemaining = packet_.Size() - 1;
-				break;
-			}
-			// read the rest of the packet
-			Uint8* packet_contents = packet_.Data();
-			packet_contents++;
-			if( SDLNet_TCP_Recv( socket_, packet_contents, bytesRemaining ) < 0 )
-			{
-				std::cout << "TCP could not get packet contents" << std::endl;
-			}
+				int bytesRemaining;
+				switch( *packet_.Data() )
+				{
+				case PT_HEARTBEAT:
+					bytesRemaining = HEARTBEAT_PACKET_SIZE - 1;
+					break;
+				case PT_JOIN_REQUEST:
+					bytesRemaining = JOINREQUEST_PACKET_SIZE - 1;
+					break;
+				case PT_JOIN_RESPONSE:
+					bytesRemaining = JOINRESPONSE_PACKET_SIZE - 1;
+					break;
+				case PT_INFO_REQUEST:
+					bytesRemaining = INFOREQUST_PACKET_SIZE - 1;
+					break;
+				case PT_MAP_DATA:
+					bytesRemaining = MAPDATA_PACKET_SIZE - 1;
+					break;
+				case PT_MOVE:
+					bytesRemaining = MOVE_PACKET_SIZE - 1;
+					break;
+				case PT_PLAYER_JOINED:
+					bytesRemaining = PLAYERJOINED_PACKET_SIZE - 1;
+					break;
+				case PT_PLAYER_DISCONNECTED:
+					bytesRemaining = PLAYERDISCONNECTED_PACKET_SIZE - 1;
+					break;
+				default:
+					std::cout << "TCP Unknown Packet Size!!!" << std::endl;
+					// read the entire buffer, and hope that clears it out
+					bytesRemaining = packet_.Size() - 1;
+					break;
+				}
+				// read the rest of the packet
+				Uint8* packet_contents = packet_.Data();
+				packet_contents++;
+				if( SDLNet_TCP_Recv( socket_, packet_contents, bytesRemaining ) < 0 )
+				{
+					std::cout << "TCP could not get packet contents" << std::endl;
+				}
 
-			std::unique_ptr<BasePacket> recvd = packet_.CreateFromContents();
-			if( recvd )
+				std::unique_ptr<BasePacket> recvd = packet_.CreateFromContents();
+				if( recvd )
+				{
+					return recvd;
+				} else {
+					std::cout << "TCP Packet type not recognised" << std::endl;
+					return nullptr;
+				}
+			}
+			else
 			{
-				return recvd;
-			} else {
-				std::cout << "TCP Packet type not recognised" << std::endl;
+				std::cout << "SDLNet_TCP_Recv: " << SDLNet_GetError() << std::endl;
+				connection_good_ = false;
 				return nullptr;
 			}
 		}
-		else
-		{
-			std::cout << "SDLNet_TCP_Recv: " << SDLNet_GetError() << std::endl;
-			connection_good_ = false;
-			return nullptr;
-		}
 	}
-	else
-	{
-		return nullptr;
-	}
+
+	return nullptr;
 }
