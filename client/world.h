@@ -1,7 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <string>
 #include <vector>
 

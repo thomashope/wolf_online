@@ -1,7 +1,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include <SDL2/SDL_net.h>
+#include <SDL_net.h>
 #include <memory>
 #include "../shared/BasePacket.h"
 #include "../shared/vec2.h"

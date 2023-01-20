@@ -3,7 +3,7 @@
 #include <vector>
 #include <thread>
 #include <chrono>
-#include <SDL2/SDL_net.h>
+#include <SDL_net.h>
 #undef main // removes SDLs evil define
 
 #include "../shared/UniversalPacket.h"

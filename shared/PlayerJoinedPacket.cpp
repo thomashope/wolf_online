@@ -1,5 +1,5 @@
 #include "PlayerJoinedPacket.h"
-#include <SDL2/SDL_net.h>
+#include <SDL_net.h>
 
 void PlayerJoinedPacket::SetPosition( Vec2 position )
 {

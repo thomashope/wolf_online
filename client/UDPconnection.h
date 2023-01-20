@@ -1,7 +1,7 @@
 #ifndef UDP_CONNECTION_H
 #define UDP_CONNECTION_H
 
-#include <SDL2/SDL_net.h>
+#include <SDL_net.h>
 #include <string>
 #include <queue>
 #include <mutex>

@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <memory>
-#include <SDL2/SDL_net.h>
+#include <SDL_net.h>
 
 // First byte of a packet should always be the type
 enum PacketType : Uint8 {

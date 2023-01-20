@@ -2,7 +2,7 @@
 #define UNIVERSAL_PACKET_H
 
 #include <memory>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include "../shared/JoinRequestPacket.h"
 #include "../shared/JoinResponsePacket.h"

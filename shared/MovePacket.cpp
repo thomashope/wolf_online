@@ -1,5 +1,5 @@
 #include "MovePacket.h"
-#include <SDL2/SDL_net.h>
+#include <SDL_net.h>
 
 void MovePacket::SetID( Uint8 ID )
 {

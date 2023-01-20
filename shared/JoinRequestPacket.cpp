@@ -1,5 +1,5 @@
 #include "JoinRequestPacket.h"
-#include <SDL2/SDL_net.h>
+#include <SDL_net.h>
 
 void JoinRequestPacket::SetPosition( Vec2 position )
 {

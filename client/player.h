@@ -1,7 +1,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "../shared/vec2.h"
 
 // Foward Declarations
