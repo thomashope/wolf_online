@@ -9,3 +9,4 @@ VS_client_project/*
 VS_server_project/*
 wolf_client
 wolf_server
+.DS_Store
